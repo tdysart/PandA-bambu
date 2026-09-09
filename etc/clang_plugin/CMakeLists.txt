@@ -15,6 +15,7 @@ set(COMPILER_EXPANDMEMOPS_PLUGIN "expandMemOps")
 set(COMPILER_OPENMP_PLUGIN "openmpBambu")
 set(COMPILER_ASTANALYZER_PLUGIN "ASTAnalyzer")
 set(COMPILER_SCALARIZEARRAYOFFIFO_PLUGIN "scalarizeArrayOfFifo")
+set(COMPILER_CHANNELCTOR_PLUGIN "channelCtorCleanup")
 
 set(_panda_plugin_base_names
    customSROA
@@ -239,6 +240,7 @@ function(_panda_add_clang_plugins ver)
    if(ver GREATER_EQUAL 16)
       _panda_make_plugin(clang_plugin_${ver}_scalarizearrayoffifo "${COMPILER_SCALARIZEARRAYOFFIFO_PLUGIN}" 1 "${_src_base}/plugin_scalarizeArrayOfFifo.cpp")
    endif()
+   _panda_make_plugin(clang_plugin_${ver}_channelctor "${COMPILER_CHANNELCTOR_PLUGIN}" 1 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
    _panda_make_plugin(clang_plugin_${ver}_opt_empty        "opt_${COMPILER_EMPTY_PLUGIN}"         0 "${_src_base}/plugin_dumpBambuIrEmpty.cpp" ${_dump_sources})
    if(NOT ver EQUAL 4)
@@ -253,6 +255,7 @@ function(_panda_add_clang_plugins ver)
    if(ver GREATER_EQUAL 16)
       _panda_make_plugin(clang_plugin_${ver}_opt_scalarizearrayoffifo "opt_${COMPILER_SCALARIZEARRAYOFFIFO_PLUGIN}" 0 "${_src_base}/plugin_scalarizeArrayOfFifo.cpp")
    endif()
+   _panda_make_plugin(clang_plugin_${ver}_opt_channelctor "opt_${COMPILER_CHANNELCTOR_PLUGIN}" 0 "${_src_base}/plugin_channelCtorCleanup.cpp")
 
    set(_all_plugins
       clang_plugin_${ver}_empty
@@ -269,6 +272,8 @@ function(_panda_add_clang_plugins ver)
       clang_plugin_${ver}_opt_expandmemops
       clang_plugin_${ver}_opt_openmp
       clang_plugin_${ver}_opt_ast
+      clang_plugin_${ver}_channelctor
+      clang_plugin_${ver}_opt_channelctor
    )
    if(NOT ver EQUAL 4)
       list(APPEND _all_plugins
