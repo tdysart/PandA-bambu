@@ -106,5 +106,9 @@ if BUILD_I386_CLANG16
 pkglib_LIBRARIES += libpthread_clang16.a
 libpthread_clang16_a_SOURCES = pthread.c
 libpthread_clang16_a_CFLAGS = --compiler=I386_CLANG16 $(common_treegccflags_clang)
+if TARGET_DARWIN
+# clang16 on Darwin/arm64 has no i386 codegen support; force the only bit-width it can build.
+libpthread_clang16_a_CFLAGS += -m64
+endif
 endif
 

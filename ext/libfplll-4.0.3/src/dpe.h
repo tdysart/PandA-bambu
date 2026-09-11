@@ -154,7 +154,7 @@ dpe_abs (dpe_t x, const dpe_t y)
 static void
 dpe_normalize (dpe_t x)
 {
- if (DPE_UNLIKELY (DPE_MANT(x) == 0.0 || finite (DPE_MANT(x)) == 0))
+ if (DPE_UNLIKELY (DPE_MANT(x) == 0.0 || isfinite (DPE_MANT(x)) == 0))
    {
      if (DPE_MANT(x) == 0.0)
        DPE_EXP(x) = DPE_EXPMIN;

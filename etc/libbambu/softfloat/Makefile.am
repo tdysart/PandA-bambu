@@ -147,5 +147,10 @@ libsoftfloat_clang16_a_SOURCES = softfloat.c
 libsoftfloat_clang16_a_CFLAGS = -O3 --compiler=I386_CLANG16 $(common_cflags_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
 libsoftfloat_subnormals_clang16_a_SOURCES = softfloat.c
 libsoftfloat_subnormals_clang16_a_CFLAGS = -O3 --compiler=I386_CLANG16 $(common_cflags_subnormals_clang) -I$(BOOST_DIR) -finline-functions --extra-gcc-options="-mllvm -inline-threshold=10000"
+if TARGET_DARWIN
+# clang16 on Darwin/arm64 has no i386 codegen support; force the only bit-width it can build.
+libsoftfloat_clang16_a_CFLAGS += -m64
+libsoftfloat_subnormals_clang16_a_CFLAGS += -m64
+endif
 endif
 

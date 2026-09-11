@@ -396,5 +396,22 @@ libhls_divas_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_C
 libhls_cdiv_clang16_a_SOURCES = $(common_libhls_cdiv_src)
 libhls_cdiv_clang16_a_CFLAGS = --compiler=I386_CLANG16  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_cdiv_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang16 on Darwin/arm64 has no i386 codegen support; force the only bit-width it can build.
+# -m64 must precede -C: tree-panda-gcc's -C takes a required argument, so appending
+# -m64 after -C would be swallowed as -C's argument instead of being parsed as -m64.
+libsoft_fp_clang16_a_CFLAGS += -m64
+libsoft_fp_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libhls_divNR_clang16_a_CFLAGS += -m64
+libhls_divNR_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libhls_divnr1_clang16_a_CFLAGS += -m64
+libhls_divnr1_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libhls_divnr2_clang16_a_CFLAGS += -m64
+libhls_divnr2_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libhls_divas_clang16_a_CFLAGS += -m64
+libhls_divas_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libhls_cdiv_clang16_a_CFLAGS += -m64
+libhls_cdiv_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+endif
 endif
 

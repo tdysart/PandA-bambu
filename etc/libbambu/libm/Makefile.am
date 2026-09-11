@@ -346,6 +346,20 @@ libm_clang16_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I38
 libm_clang16_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_clang16_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG16
 libm_clang16_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang16 on Darwin/arm64 has no i386 codegen support, so -m32 (tree-panda-gcc's
+# default) is not usable here; force the only bit-width this target can build.
+# -m64 must precede -C: tree-panda-gcc's -C takes a required argument, so appending
+# -m64 after -C would be swallowed as -C's argument instead of being parsed as -m64.
+libm_clang16_a_CFLAGS += -m64
+libm_clang16_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libm_clang16_std_a_CFLAGS += -m64
+libm_clang16_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libm_clang16_subnormals_a_CFLAGS += -m64
+libm_clang16_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+libm_clang16_subnormals_std_a_CFLAGS += -m64
+libm_clang16_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG16 $(common_treegccflags_clang) -m64 -C
+endif
 endif
 
 DIST_SOURCES = $(common_libm_src) $(common_libm_src_fr) $(common_libm_src_std)

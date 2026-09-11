@@ -1,0 +1,110 @@
+/*
+ *
+ *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
+ *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
+ *                 _/_/_/  _/_/_/_/ _/  _/_/ _/   _/ _/_/_/_/
+ *                _/      _/    _/ _/    _/ _/   _/ _/    _/
+ *               _/      _/    _/ _/    _/ _/_/_/  _/    _/
+ *
+ *             ***********************************************
+ *                              PandA Project
+ *                     URL: http://panda.dei.polimi.it
+ *                       Politecnico di Milano - DEIB
+ *                        System Architectures Group
+ *             ***********************************************
+ *              Copyright (c) 2023-2024 Politecnico di Milano
+ *
+ *   This file is part of the PandA framework.
+ *
+ *   The PandA framework is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+*/
+/*!
+  \page install_macos Building on macOS (community-supported)
+  macOS is not one of the \ref install_supportedos "officially supported operating systems" for PandA/Bambu.
+  It is possible to build the framework natively on macOS (as opposed to using the \ref install_docker "Docker image"),
+  but doing so currently requires one important workaround described below. This page assumes you are otherwise
+  following the generic \ref install_source "build from source" instructions, using a Homebrew-provided LLVM/Clang
+  toolchain (e.g. `llvm@16`) as the frontend compiler.
+
+  \section install_macos_ar Apple ar/ranlib silently drop non-Mach-O archive members
+
+  \subsection install_macos_ar_symptom Symptom
+  A native macOS build completes without any configure or compile errors, but `bambu` later fails during HLS synthesis
+  with errors such as:
+  \verbatim
+  error -> The library miss this function __float_mul (called_function)
+  \endverbatim
+  or similar "library miss this function" errors for other runtime helpers (soft-float, libm, pthread, ...), even
+  though the corresponding source file (e.g. `etc/libbambu/softfloat/softfloat.c`) is present and was compiled
+  without error.
+
+  \subsection install_macos_ar_cause Cause
+  The `etc/libbambu` resource libraries (`libbambu`, `libm`, `libsoftfloat`, `soft-fp`, `pthread`, ...) are not meant
+  to be linked by a native linker. Their `.o` members are produced by `tree-panda-gcc` as gzip-compressed LLVM
+  bitcode wrapped to look like object files, and are parsed directly by Bambu itself at HLS time - they are never
+  valid Mach-O objects.
+
+  The `ar`/`ranlib` shipped with Xcode Command Line Tools (`/usr/bin/ar`, `/usr/bin/ranlib`) silently drop any
+  archive member they do not recognize as Mach-O when the archive's symbol table is (re)built, instead of storing it
+  as an opaque member the way GNU/LLVM `ar` does. The result is a `.a` file that contains only the `__.SYMDEF SORTED`
+  symbol table and none of the actual objects - i.e. an effectively empty runtime library - which is why Bambu can't
+  find e.g. `__float_mul` at synthesis time.
+
+  You can confirm this is happening by inspecting one of the built archives, e.g.:
+  \verbatim
+  ar t <prefix>/lib/panda/libsoftfloat_clang16.a
+  \endverbatim
+  If this prints only `__.SYMDEF SORTED` (no `.o` member listed), the archive is empty. During the build you will
+  also see warnings such as:
+  \verbatim
+  ranlib: warning: archive member 'libsoftfloat_clang16_a-softfloat.o' not a mach-o file
+  \endverbatim
+  These warnings are easy to miss/ignore in the middle of a long build log, but they are the actual root cause.
+
+  \subsection install_macos_ar_fix Fix
+  Use LLVM's `ar`/`ranlib` instead of Apple's. They ship alongside the Clang/LLVM toolchain (e.g. via
+  `brew install llvm@16`, under `$(brew --prefix llvm@16)/bin/llvm-ar` and `llvm-ranlib`) and store any file as an
+  archive member regardless of its format, matching the behavior PandA's build expects on Linux.
+
+  Most of the `etc/libbambu` archives are built through Automake's standard archiving rules, which honor `$(AR)`/
+  `$(RANLIB)` and so can simply be overridden on the `make` command line:
+  \verbatim
+  make AR=llvm-ar RANLIB=llvm-ranlib
+  make AR=llvm-ar RANLIB=llvm-ranlib install
+  \endverbatim
+
+  `libbambu_clang16.a` is the one exception: it is produced by `tree-panda-gcc`'s own archive-merging code path
+  (see `command = "ar cru " + ...` in `src/tree-panda-gcc.cpp`), which shells out to a hardcoded `ar` rather than
+  respecting `$(AR)`. Overriding `AR=` on the `make` command line has no effect on this step. To fix it too, make
+  sure `ar`/`ranlib` resolve to the LLVM versions via `$PATH` for the duration of the build, for example by placing
+  symlinks ahead of `/usr/bin` in `$PATH`:
+  \verbatim
+  mkdir -p /tmp/llvm-ar-shim
+  ln -sf "$(brew --prefix llvm@16)/bin/llvm-ar"     /tmp/llvm-ar-shim/ar
+  ln -sf "$(brew --prefix llvm@16)/bin/llvm-ranlib" /tmp/llvm-ar-shim/ranlib
+  PATH="/tmp/llvm-ar-shim:$PATH" make AR=llvm-ar RANLIB=llvm-ranlib
+  PATH="/tmp/llvm-ar-shim:$PATH" make AR=llvm-ar RANLIB=llvm-ranlib install
+  \endverbatim
+
+  If you already ran a build/install before applying this workaround, the stale empty archives under your build
+  directory and install prefix will not be regenerated just by re-running `make` (the `.a` target is already
+  up to date as far as `make` is concerned). Delete them first so the archiving rules re-run:
+  \verbatim
+  find <builddir>/etc/libbambu -name '*.a' -delete
+  \endverbatim
+  then rebuild/install as shown above. Verify the fix with the same `ar t` check from
+  \ref install_macos_ar_symptom "the symptom section" above - you should now see the real `.o` member(s) listed.
+
+*/

@@ -50,6 +50,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 CONSTREF_FORWARD_DECL(Parameter);

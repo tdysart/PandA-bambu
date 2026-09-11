@@ -16,6 +16,7 @@ PRJ_DOC = \
    dev101/dev.doc \
    install/install_appimage.doc \
    install/install_docker.doc \
+   install/install_macos.doc \
    install/install_os.doc \
    install/install_source.doc \
    install/install.doc \

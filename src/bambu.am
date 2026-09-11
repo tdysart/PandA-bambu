@@ -111,6 +111,10 @@ bambu_LDADD = lib_bambu.la @PTHREAD_HACK@
 
 bambu_LDFLAGS = $(AM_LDFLAGS)
 # The following is necessary to allow static self-registration of Factory derived classes
+if TARGET_DARWIN
+bambu_LDFLAGS += -Wl,-force_load,$(top_builddir)/src/HLS/.libs/lib_module_generator.a
+else
 bambu_LDFLAGS += -Wl,--whole-archive,$(top_builddir)/src/HLS/.libs/lib_module_generator.a,--no-whole-archive
+endif
 
 

@@ -1052,7 +1052,13 @@ float ADD_BUILTIN_PREFIX(cosf)(float x)
    }
 }
 
-float _Complex ADD_BUILTIN_PREFIX(cexpif)(float x)
+/* Factored out of cexpif as an always-inline helper: clang-16 on Darwin/arm64 crashes
+   ("error in backend: type not supported") when sincosf calls the public cexpif and
+   unpacks __real__/__imag__ from its _Complex return value, because that call is not
+   fully inlined and the resulting extractvalue is on a type the clang GIMPLE-dump
+   plugin does not handle. Inlining the shared logic at both call sites avoids the
+   cross-function _Complex-return extraction that triggers the crash. */
+static __attribute__((always_inline)) float _Complex __cexpif_impl(float x)
 {
    extern float fabsf(float x);
    unsigned int y;
@@ -1158,9 +1164,14 @@ float _Complex ADD_BUILTIN_PREFIX(cexpif)(float x)
    return Res;
 }
 
+float _Complex ADD_BUILTIN_PREFIX(cexpif)(float x)
+{
+   return __cexpif_impl(x);
+}
+
 void ADD_BUILTIN_PREFIX(sincosf)(float x, float* sinx, float* cosx)
 {
-   float _Complex res = ADD_BUILTIN_PREFIX(cexpif)(x);
+   float _Complex res = __cexpif_impl(x);
    *sinx = __imag__ res;
    *cosx = __real__ res;
 }
@@ -1169,7 +1180,7 @@ float ADD_BUILTIN_PREFIX(tanf)(float x)
 {
    float sinx;
    float cosx;
-   float _Complex res = ADD_BUILTIN_PREFIX(cexpif)(x);
+   float _Complex res = __cexpif_impl(x);
    sinx = __imag__ res;
    cosx = __real__ res;
    return sinx / cosx;
