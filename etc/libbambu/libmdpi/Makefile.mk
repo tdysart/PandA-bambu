@@ -79,12 +79,28 @@ MDPI_OBJ_DIR := $(BUILD_DIR)/mdpi
 DRIVER_SRC := $(libmdpi_root)/mdpi_driver.cpp
 MDPI_SRCS := $(libmdpi_root)/mdpi.c
 
+###
+# macOS/Mach-O has no drop-in equivalent for the objcopy tricks used below
+# (--weaken, -W and --redefine-sym all assume ELF symbol binding semantics
+# llvm-objcopy does not implement for Mach-O). On Darwin the same renames are
+# done at compile time via -D instead of via a post-compile/post-link objcopy
+# pass, and the defensive blanket weakening of $(OBJS) (guarding against
+# duplicate helper symbols between a kernel object and its PP_SRC variant)
+# is dropped rather than ported, since it is not exercised unless PP_SRC is
+# in use.
+###
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	TOP_RENAME_DEFINE := -D$(TOP_FNAME)=$(MTOP_FNAME)
+	SYS_RENAME_DEFINES := -Dexit=__m_exit -Dabort=__m_abort -D__assert_rtn=__m_assert_rtn
+endif
+
 OBJS := $(patsubst $(SRC_DIR)/%,$(OBJ_DIR)/%.o, $(SRCS))
 TB_OBJS := $(patsubst $(TB_SRC_DIR)/%,$(TB_OBJ_DIR)/%.o, $(TB_SRCS))
 DRIVER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(DRIVER_SRC)))
 WRAPPER_OBJ := $(patsubst %,$(MDPI_OBJ_DIR)/%.o, $(notdir $(WRAPPER_SRC)))
 
-override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include
+override TB_CFLAGS := $(patsubst -fno-exceptions,,$(CFLAGS)) $(TB_CFLAGS) -I$(libmdpi_root)/include $(SYS_RENAME_DEFINES)
 MDPI_CFLAGS := $(BEH_CFLAGS) -D_GNU_SOURCE # $(shell echo "$(CFLAGS)" | grep -oE '(-mx?[0-9]+)' | sed -E 's/-mx?/-DM/' | tr '[:lower:]' '[:upper:]')
 LIB_CFLAGS := $(MDPI_CFLAGS)
 ifdef BEH_CC
@@ -93,9 +109,9 @@ endif
 DRIVER_CFLAGS := $(shell echo "$(TB_CFLAGS)" | grep -oE '(-mx?[0-9]+)')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( (-I|-isystem) ?[^ ]+)' | tr '\n' ' ')
 DRIVER_CFLAGS += $(shell echo "$(TB_CFLAGS)" | grep -oE '( -D(\\.|[^ ])+)' | tr '\n' ' ')
-DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -fno-exceptions -DMDPI_PARALLEL_VERIFICATION -I$(libmdpi_root)/../ac_types/include
+DRIVER_CFLAGS += $(MDPI_CFLAGS) -std=c++11 -fno-exceptions -DMDPI_PARALLEL_VERIFICATION -I$(libmdpi_root)/../ac_types/include $(SYS_RENAME_DEFINES)
 
-WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++11 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER -I$(libmdpi_root)/../ac_types/include
+WRAPPER_CFLAGS := $(MDPI_CFLAGS) -std=c++11 -fno-exceptions $(shell echo "$(CFLAGS)" | sed -E 's/(-{1,2}std=(c|gnu)([0-9]+|\+\+(0|9)([0-9]|x)))//g') -DLIBMDPI_DRIVER -I$(libmdpi_root)/../ac_types/include $(SYS_RENAME_DEFINES)
 ifdef PP_SRC
 	ifneq ($(TOP_FNAME),main)
 		ifndef MPPTOP_FNAME
@@ -121,12 +137,19 @@ ifeq ($(BEH_CC),xsc)
 	LIB_CFLAGS := $(addprefix -gcc_compile_options=, $(LIB_CFLAGS))
 	LIB_LDFLAGS := -work $(shell realpath --relative-to $(libmdpi_root) $(BEH_DIR)) $(addprefix -gcc_link_options=, $(LIB_LDFLAGS))
 else
+ifeq ($(UNAME_S),Darwin)
+	# ld64 has no -Bsymbolic/-z; -undefined,error is its equivalent of -z,defs
+	LIB_LDFLAGS += -shared -fPIC -Wl,-undefined,error
+else
 	LIB_LDFLAGS += -shared -fPIC -Bsymbolic -Wl,-z,defs
 endif
+endif
 
+ifneq ($(UNAME_S),Darwin)
 REDEFINE_SYS := --redefine-sym exit=__m_exit --redefine-sym abort=__m_abort --redefine-sym __assert_fail=__m_assert_fail
 REDEFINE_TOP := --weaken --redefine-sym $(TOP_FNAME)=$(MTOP_FNAME)
 WEAKEN_TOP := -W $(TOP_FNAME)
+endif
 
 DRIVER_LIB := $(SIM_DIR)/libmdpi_driver.so
 MDPI_LIB := $(BEH_DIR)/libmdpi.so
@@ -156,15 +179,23 @@ endif
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%
 	@echo "Compiling $(notdir $<)"
 	@mkdir -p $$(dirname $@)
-	@$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+	@$(CC) $(CFLAGS) $(TOP_RENAME_DEFINE) -fPIC -c -o $@ $<
+ifneq ($(UNAME_S),Darwin)
 	@objcopy $(REDEFINE_TOP) $@
+endif
 
 $(TB_OBJ_DIR)/%.o: $(TB_SRC_DIR)/%
 	@echo "Compiling testbench $(notdir $<)"
 	@mkdir -p $$(dirname $@)
 	@$(CC) $(TB_CFLAGS) -fPIC -c -o $@ $<
+ifneq ($(UNAME_S),Darwin)
 	@objcopy $(WEAKEN_TOP) $(REDEFINE_SYS) $@
+endif
 
+# NOTE: not yet ported to Darwin. --keep-global-symbol localizes (changes
+# ELF binding to LOCAL) every symbol but TOP_FNAME/get_pc_thunk, which has no
+# Mach-O equivalent objcopy exposes; this only matters once a benchmark
+# actually sets PP_SRC (pretty-print/tracing), which none currently do.
 $(PP_OBJ): $(PP_SRC)
 	@echo "Compiling $(notdir $<)"
 	@mkdir -p $$(dirname $@)
@@ -185,7 +216,9 @@ $(DRIVER_OBJ): $(DRIVER_SRC)
 $(DRIVER_LIB): $(OBJS) $(DRIVER_OBJ) $(WRAPPER_OBJ) $(PP_OBJ)
 	@echo "Linking $(notdir $@)"
 	@$(CC) -shared -o $@ $^ $(DRIVER_LDFLAGS)
+ifneq ($(UNAME_S),Darwin)
 	@objcopy $(REDEFINE_SYS) $@
+endif
 
 $(TB_TARGET): $(TB_OBJS) $(OBJS) $(DRIVER_OBJ) $(WRAPPER_OBJ) $(PP_OBJ)
 ifdef TB_SRCS

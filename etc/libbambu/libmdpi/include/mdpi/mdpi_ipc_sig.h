@@ -73,6 +73,10 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#if defined(__APPLE__)
+#include <sys/event.h>
+#include <sys/time.h>
+#endif
 
 #ifndef __M_IPC_BACKEND_SIGNO
 #define __M_IPC_BACKEND_SIGNO SIGUSR1
@@ -93,6 +97,54 @@ static mdpi_ipc_file_t* __m_ipc_file = NULL;
 #define __m_ipc_remote_pid (__m_ipc_file->proc[1 - __LOCAL_ENTITY])
 #define __m_ipc_operation (__m_ipc_file->operation)
 
+#if defined(__APPLE__)
+/*
+ * Darwin has no sigtimedwait(). kqueue's EVFILT_SIGNAL is the closest native
+ * equivalent: it delivers a queued notification (rather than the signal
+ * itself) when __M_IPC_BACKEND_SIGNO is received, and kevent() accepts the
+ * same kind of timeout. The signal must already be blocked (done once in
+ * __ipc_map, see sigprocmask(SIG_BLOCK, ...) below) for the default
+ * disposition to be suppressed and for kqueue to observe it instead.
+ */
+static void __ipc_wait(mdpi_ipc_state_t state)
+{
+   static struct timespec tv = {__M_IPC_BACKEND_SIG_TIMEOUT, 0};
+   static int kq = -1;
+
+   if(kq == -1)
+   {
+      struct kevent kev;
+      kq = kqueue();
+      if(kq == -1)
+      {
+         error("Unable to create kqueue for IPC signal wait.\n");
+         perror("kqueue failed");
+         abort();
+      }
+      EV_SET(&kev, __M_IPC_BACKEND_SIGNO, EVFILT_SIGNAL, EV_ADD, 0, 0, NULL);
+      if(kevent(kq, &kev, 1, NULL, 0, NULL) == -1)
+      {
+         error("Unable to register IPC signal with kqueue.\n");
+         perror("kevent failed");
+         abort();
+      }
+   }
+
+   while(atomic_load(&__m_ipc_file->handle) != state)
+   {
+      struct kevent kev;
+      if(kevent(kq, NULL, 0, &kev, 1, &tv) == -1)
+      {
+         if(errno != EAGAIN && errno != EINTR)
+         {
+            error("Unable to wait for signal.\n");
+            perror("kevent failed");
+            abort();
+         }
+      }
+   }
+}
+#else
 static void __ipc_wait(mdpi_ipc_state_t state)
 {
    static struct timespec tv = {__M_IPC_BACKEND_SIG_TIMEOUT, 0};
@@ -115,6 +167,7 @@ static void __ipc_wait(mdpi_ipc_state_t state)
       }
    }
 }
+#endif
 
 static void __ipc_reserve()
 {

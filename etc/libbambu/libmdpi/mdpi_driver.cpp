@@ -604,6 +604,20 @@ void __m_assert_fail(const char* __assertion, const char* __file, unsigned int _
    __m_abort();
 }
 
+#if defined(__APPLE__)
+/*
+ * Darwin's assert() does not call __assert_fail: it calls __assert_rtn with
+ * a different name and argument order (func, file, line, message). Rather
+ * than intercepting a libc-internal symbol whose name/ABI differs per
+ * platform, Makefile.mk defines -D__assert_rtn=__m_assert_rtn so every
+ * assert() expansion is redirected here at compile time.
+ */
+void __m_assert_rtn(const char* __function, const char* __file, int __line, const char* __assertion)
+{
+   __m_assert_fail(__assertion, __file, (unsigned int)__line, __function);
+}
+#endif
+
 void __attribute__((constructor)) __mdpi_driver_init()
 {
    static const int __sigs[] = {SIGINT, SIGABRT, SIGSEGV, SIGCHLD};

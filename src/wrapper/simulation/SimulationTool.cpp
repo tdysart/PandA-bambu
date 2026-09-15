@@ -334,7 +334,7 @@ std::string SimulationTool::GenerateSimulationScript(const std::string& top_file
    script
        << "export M_IPC_SIM_CMD=\"" << sim_cmd << "; exit \\${PIPESTATUS[0]};\"\n\n"
        << "if [ -f ${SYS_ELF} ]; then\n"
-       << "  function get_class { readelf -h $1 | grep Class: | sed -E 's/.*Class:\\s*(\\w+)/\\1/'; }\n"
+       << "  function get_class { file -b \"$1\" | grep -oE '[0-9]+-bit'; }\n"
        << "  sys_elf_class=\"$(get_class ${SYS_ELF})\"\n"
        << "  driver_elf_class=\"$(get_class ${SIM_DIR}/libmdpi_driver.so)\"\n"
        << "  if [ \"${sys_elf_class}\" != \"${driver_elf_class}\" ]; then\n"

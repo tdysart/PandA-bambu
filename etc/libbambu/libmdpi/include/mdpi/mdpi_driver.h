@@ -72,6 +72,9 @@ EXTERN_C unsigned int __m_sim_end();
 EXTERN_C void __m_exit(int __status);
 EXTERN_C void __m_abort(void);
 EXTERN_C void __m_assert_fail(const char* __assertion, const char* __file, unsigned int __line, const char* __function);
+#if defined(__APPLE__)
+EXTERN_C void __m_assert_rtn(const char* __function, const char* __file, int __line, const char* __assertion);
+#endif
 
 #if defined(__cplusplus) && __cplusplus >= 201103L
 
