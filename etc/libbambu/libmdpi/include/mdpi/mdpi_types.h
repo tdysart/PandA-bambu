@@ -50,8 +50,19 @@
 #endif
 #endif
 
-#include <bits/wordsize.h>
 #include <stdint.h>
+
+#if defined(__APPLE__)
+#ifndef __WORDSIZE
+#if defined(__LP64__) || defined(_LP64)
+#define __WORDSIZE 64
+#else
+#define __WORDSIZE 32
+#endif
+#endif
+#else
+#include <bits/wordsize.h>
+#endif
 
 #if defined(VERILATOR) // Verilator
 typedef long long sv_longint_t;

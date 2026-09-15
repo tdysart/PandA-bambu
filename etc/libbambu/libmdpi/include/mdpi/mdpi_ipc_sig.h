@@ -50,7 +50,9 @@
 #define __USE_FILE_OFFSET64
 #define _FILE_OFFSET_BITS 64
 
+#if !defined(__APPLE__)
 #include <features.h>
+#endif
 
 #ifndef __cplusplus
 #include <assert.h>
