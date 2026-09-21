@@ -264,6 +264,9 @@ if test "$target_cpu" = x86_64; then
 fi
 AM_CONDITIONAL(TARGET_X86_64, test "$target_cpu" = x86_64)
 
+############### darwin checking ############################
+AM_CONDITIONAL(TARGET_DARWIN, test "x$(echo $host_os | grep darwin)" != "x")
+
 
 
 ################################################################################
@@ -982,6 +985,13 @@ fi
 if test "$DISTRO" = "arch"; then
    panda_ALLSTATIC=no;
 fi
+
+# macOS has no static libSystem/crt0.o, so fully static linking is not possible
+case "${host_os}" in
+  darwin*)
+     panda_ALLSTATIC=no;
+     ;;
+esac
 
 if test "x$panda_USE_TASTE" = xyes; then
    panda_USE_LIB_FROM_AADL_ASN=yes;

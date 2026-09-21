@@ -109,5 +109,9 @@ eucalyptus_LDFLAGS = $(AM_LDFLAGS)
 
 if BUILD_LIB_HLS
    # The following is necessary to allow static self-registration of Factory derived classes
+if TARGET_DARWIN
+   eucalyptus_LDFLAGS += -Wl,-force_load,$(top_builddir)/src/HLS/.libs/lib_module_generator.a
+else
    eucalyptus_LDFLAGS += -Wl,--whole-archive,$(top_builddir)/src/HLS/.libs/lib_module_generator.a,--no-whole-archive
+endif
 endif
