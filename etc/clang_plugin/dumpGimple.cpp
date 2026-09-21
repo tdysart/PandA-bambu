@@ -39,6 +39,8 @@
  */
 
 // #undef NDEBUG
+#include <map>
+#include <set>
 #include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
@@ -2482,7 +2484,7 @@ namespace llvm
    unsigned int DumpGimpleRaw::gimple_call_num_args(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-      return ci->getNumArgOperands();
+      return ci->arg_size();
    }
 
    const void* DumpGimpleRaw::gimple_call_arg(const void* g, unsigned int arg_index)
@@ -2802,7 +2804,7 @@ namespace llvm
       if(TREE_CODE(t) == GT(VAR_DECL))
       {
          const llvm::GlobalVariable* llvm_obj = reinterpret_cast<const llvm::GlobalVariable*>(t);
-         return std::max(8u, 8 * llvm_obj->getAlignment());
+         return std::max<uint64_t>(8, 8 * llvm_obj->getAlignment());
       }
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
       {
@@ -2818,7 +2820,7 @@ namespace llvm
                algn = typeSize / 8ULL;
             }
          }
-         return std::max(8u, 8 * algn);
+         return std::max<uint64_t>(8, 8 * algn);
       }
       else
          return TYPE_ALIGN(TREE_TYPE(t));
@@ -3303,7 +3305,7 @@ namespace llvm
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
       if(!ty->isSized())
          return 8;
-      return std::max(8u, 8 * DL->getABITypeAlignment(ty));
+      return std::max<uint64_t>(8, 8 * DL->getABITypeAlignment(ty));
    }
 
    const void* DumpGimpleRaw::TYPE_ARG_TYPES(const void* t)
@@ -4008,7 +4010,7 @@ namespace llvm
             if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
             {
 #if __clang_major__ >= 13
-               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+               for(unsigned index = 0; index < val->getElementCount().getKnownMinValue(); ++index)
 #else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
 #endif
@@ -4025,7 +4027,7 @@ namespace llvm
             {
                const void* ty = TREE_TYPE(t);
 #if __clang_major__ >= 13
-               for(unsigned index = 0; index < val->getElementCount().getValue(); ++index)
+               for(unsigned index = 0; index < val->getElementCount().getKnownMinValue(); ++index)
 #else
                for(unsigned index = 0; index < val->getNumElements(); ++index)
 #endif
@@ -5682,7 +5684,7 @@ namespace llvm
       if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
       {
 #if __clang_major__ >= 12
-         return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+         return (VTy->getElementCount().getKnownMinValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #else
          return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #endif
@@ -5766,6 +5768,30 @@ namespace llvm
       }
    }
 
+#if __clang_major__ >= 14
+   /* LLVM 14 removed both llvm::ConstantExpr::isGEPWithNoNotionalOverIndexing()
+      and the free function llvm::ConstantFoldLoadThroughGEPConstantExpr(), with
+      no direct renamed equivalent. This reimplements the same operation -- fold
+      a load of type Ty from base constant C at the byte offset described by the
+      (validated, all-constant-index) GEP constant expression CE -- using the
+      APIs that replaced their internals:
+       - GEPOperator::accumulateConstantOffset() computes the constant byte
+         offset the GEP represents (this subsumes the bounds bookkeeping
+         isGEPWithNoNotionalOverIndexing() used to do: on any out-of-notional-
+         range index it simply fails to produce a usable offset here, or
+         ConstantFoldLoadFromConst below reports the access as poison).
+       - ConstantFoldLoadFromConst() then extracts C's value at that offset,
+         reinterpreted as Ty, returning null if it can't be determined. */
+   static llvm::Constant* ConstantFoldLoadThroughGEPConstantExprLocal(llvm::Constant* C, llvm::ConstantExpr* CE,
+                                                                      llvm::Type* Ty, const llvm::DataLayout& DL)
+   {
+      llvm::APInt Offset(DL.getIndexTypeSizeInBits(CE->getType()), 0);
+      if(!cast<llvm::GEPOperator>(CE)->accumulateConstantOffset(DL, Offset))
+         return nullptr;
+      return llvm::ConstantFoldLoadFromConst(C, Ty, Offset, DL);
+   }
+#endif
+
    static bool isSimpleEnoughPointerToCommitLocal(llvm::Constant* C, const llvm::DataLayout& DL)
    {
       // Conservatively, avoid aggregate types. This is because we don't
@@ -5794,6 +5820,10 @@ namespace llvm
             if(!CI || !CI->isZero())
                return false;
 
+#if __clang_major__ >= 14
+            return ConstantFoldLoadThroughGEPConstantExprLocal(GV->getInitializer(), CE,
+                                                               C->getType()->getPointerElementType(), DL);
+#else
             // The remaining indices must be compile-time known integers within the
             // notional bounds of the corresponding static array types.
             if(!CE->isGEPWithNoNotionalOverIndexing())
@@ -5803,6 +5833,7 @@ namespace llvm
                                                           C->getType()->getPointerElementType(), DL);
 #else
             return ConstantFoldLoadThroughGEPConstantExpr(GV->getInitializer(), CE);
+#endif
 #endif
 
             // A constantexpr bitcast from a pointer to another pointer is a no-op,
@@ -5897,7 +5928,7 @@ namespace llvm
       else if(dyn_cast<llvm::VectorType>(initType))
       {
 #if __clang_major__ >= 12
-         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getValue();
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getElementCount().getKnownMinValue();
 #else
          NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
 #endif
@@ -6015,7 +6046,7 @@ namespace llvm
             else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
             {
 #if __clang_major__ >= 12
-               NumElts = VTy->getElementCount().getValue();
+               NumElts = VTy->getElementCount().getKnownMinValue();
 #else
                NumElts = VTy->getNumElements();
 #endif
@@ -6174,7 +6205,9 @@ namespace llvm
             case llvm::Instruction::GetElementPtr:
                if(auto* I = getInitializerLocal(CE->getOperand(0)))
                {
-#if __clang_major__ >= 13
+#if __clang_major__ >= 14
+                  return ConstantFoldLoadThroughGEPConstantExprLocal(I, CE, P->getType()->getPointerElementType(), DL);
+#elif __clang_major__ >= 13
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE, P->getType()->getPointerElementType(), DL);
 #else
                   return llvm::ConstantFoldLoadThroughGEPConstantExpr(I, CE);

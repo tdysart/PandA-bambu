@@ -42,6 +42,7 @@
 // The porting has been done by Fabrizio Ferrandi. The main change is related to the operations latencies.
 
 #undef NDEBUG
+#include <set>
 #include "llvm/ADT/DepthFirstIterator.h"
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/ADT/Twine.h"

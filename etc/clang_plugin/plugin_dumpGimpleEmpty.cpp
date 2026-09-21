@@ -270,7 +270,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleEmpty)()
                  return false;
               });
               PB.registerOptimizerLastEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+                  [&](llvm::ModulePassManager& MPM, llvm::OptimizationLevel) { return load(MPM); });
            }};
 }
 

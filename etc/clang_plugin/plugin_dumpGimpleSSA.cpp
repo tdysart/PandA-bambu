@@ -38,6 +38,7 @@
  *
  */
 // #undef NDEBUG
+#include <map>
 #include "debug_print.hpp"
 
 #include "plugin_includes.hpp"
@@ -383,7 +384,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_dumpGimpleSSA)()
                  return false;
               });
               PB.registerOptimizerLastEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+                  [&](llvm::ModulePassManager& MPM, llvm::OptimizationLevel) { return load(MPM); });
            }};
 }
 

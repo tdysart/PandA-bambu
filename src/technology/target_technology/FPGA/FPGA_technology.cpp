@@ -51,7 +51,6 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 

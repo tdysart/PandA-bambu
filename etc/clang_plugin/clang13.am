@@ -45,7 +45,7 @@ clang13_plugin_dumpGimpleSSA.so : clang13_plugin_dumpGimpleSSA.o clang13_dumpGim
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs` -lbdd';\
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
@@ -61,7 +61,7 @@ clang13_plugin_dumpGimpleSSA.so : clang13_plugin_dumpGimpleSSA.o clang13_dumpGim
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -81,7 +81,7 @@ clang13_plugin_dumpGimpleSSACpp.so : clang13_plugin_dumpGimpleSSACpp.o clang13_d
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs` -lbdd'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
@@ -97,7 +97,7 @@ clang13_plugin_dumpGimpleSSACpp.so : clang13_plugin_dumpGimpleSSACpp.o clang13_d
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -117,7 +117,7 @@ clang13_plugin_dumpGimpleEmpty.so : clang13_plugin_dumpGimpleEmpty.o clang13_dum
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs` -lbdd'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
@@ -133,7 +133,7 @@ clang13_plugin_dumpGimpleEmpty.so : clang13_plugin_dumpGimpleEmpty.o clang13_dum
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -152,7 +152,7 @@ clang13_plugin_expandMemOps.so : clang13_plugin_expandMemOps.o
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -169,7 +169,7 @@ clang13_plugin_GepiCanon.so : clang13_plugin_GepiCanon.o clang13_GepiCanon.o
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -186,7 +186,7 @@ clang13_plugin_CSROA.so : clang13_plugin_CSROA.o clang13_CSROA.o clang13_GepiCan
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -203,7 +203,7 @@ clang13_plugin_topfname.so : clang13_plugin_topfname.o
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -219,7 +219,7 @@ clang13_plugin_ASTAnalyzer.so : clang13_plugin_ASTAnalyzer.o
 	    compile_options='$(CLANG13_LIBS) -lversion `$(I386_LLVM_CONFIG13_EXE) --ldflags --libs --system-libs`'; \
 	    compile_options='';; \
 	  darwin*) \
-	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++';; \
 	  *) \
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
@@ -433,7 +433,7 @@ clang13_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggreg
 bambuS2S-13: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 	case $(host_os) in \
 	  darwin*) \
-	    $(I386_CLANG13_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG13_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG13_LIBSD)  -o $@;;\
+	    $(I386_CLANG13_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 -isysroot '`xcrun --show-sdk-path`' -L'`xcrun --show-sdk-path`'/usr/lib -L'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ -Wl,-rpath,'`dirname $(I386_CLANG13_EXE)`'/../lib/c++ `$(I386_LLVM_CONFIG13_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG13_LIBSD)  -o $@;;\
 	  *) \
 	    $(I386_CLANG13_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG13_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG13_LIBS)  -o $@;;\
 	esac;

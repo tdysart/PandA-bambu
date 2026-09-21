@@ -448,20 +448,74 @@ pkglib_LIBRARIES += libsoft-fp_clang13.a libhls-divNR_clang13.a libhls-divnr1_cl
 libsoft_fp_clang13_a_SOURCES = $(common_libsoft_fp_src)
 libsoft_fp_clang13_a_CFLAGS = --compiler=I386_CLANG13 $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 libsoft_fp_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libsoft_fp_clang13_a_CFLAGS += -m64
+libsoft_fp_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libhls_divNR_clang13_a_SOURCES = $(common_libhls_div_src)
 libhls_divNR_clang13_a_CFLAGS = --compiler=I386_CLANG13 $(common_cflags_nr_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_divNR_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libhls_divNR_clang13_a_CFLAGS += -m64
+libhls_divNR_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libhls_divnr1_clang13_a_SOURCES = $(common_libhls_divnr_src)
 libhls_divnr1_clang13_a_CFLAGS = --compiler=I386_CLANG13  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1 --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_divnr1_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libhls_divnr1_clang13_a_CFLAGS += -m64
+libhls_divnr1_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libhls_divnr2_clang13_a_SOURCES = $(common_libhls_divnr_src)
 libhls_divnr2_clang13_a_CFLAGS = --compiler=I386_CLANG13  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2 --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_divnr2_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libhls_divnr2_clang13_a_CFLAGS += -m64
+libhls_divnr2_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libhls_divas_clang13_a_SOURCES = $(common_libhls_divas_src)
 libhls_divas_clang13_a_CFLAGS = --compiler=I386_CLANG13  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_divas_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libhls_divas_clang13_a_CFLAGS += -m64
+libhls_divas_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libhls_cdiv_clang13_a_SOURCES = $(common_libhls_cdiv_src)
 libhls_cdiv_clang13_a_CFLAGS = --compiler=I386_CLANG13  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_cdiv_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libhls_cdiv_clang13_a_CFLAGS += -m64
+libhls_cdiv_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 endif
 

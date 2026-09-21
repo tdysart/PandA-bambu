@@ -70,6 +70,9 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include <map>
+#include <set>
+#include <unordered_map>
 #include "config_HAVE_LIBBDD.hpp"
 
 #if HAVE_LIBBDD
@@ -7352,7 +7355,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
          // The function pointer may point to realloc at one time
          //  and to a function with fewer args at another time;
          //  we should skip the realloc if the current call has fewer args.
-         if(I->getNumArgOperands() < 1)
+         if(I->arg_size() < 1)
          {
             break;
          }
@@ -7410,7 +7413,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst
             default:
                i_arg = 0;
          }
-         if(I->getNumArgOperands() <= i_arg)
+         if(I->arg_size() <= i_arg)
          {
             break;
          }

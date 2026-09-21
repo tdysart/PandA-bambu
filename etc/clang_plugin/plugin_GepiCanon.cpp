@@ -212,7 +212,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_GepiCanon)()
                  return true;
               });
               PB.registerPipelineEarlySimplificationEPCallback(
-                  [](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) {
+                  [](llvm::ModulePassManager& MPM, llvm::OptimizationLevel) {
                      llvm::FunctionPassManager FPM;
                      FPM.addPass(llvm::PromotePass());
                      FPM.addPass(llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_intrinsic > ());

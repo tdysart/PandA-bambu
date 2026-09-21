@@ -416,6 +416,7 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
+#include <boost/filesystem/directory.hpp>
 #include <boost/regex.hpp>
 
 /// XML includes used for writing and reading the configuration file
@@ -3155,7 +3156,7 @@ size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
-      command += absolute_path.branch_path().string() + "/*\\.h ";
+      command += absolute_path.parent_path().string() + "/*\\.h ";
       command += source_file + " ";
    }
    command += std::string(" 2> /dev/null | wc -l");
@@ -3702,7 +3703,7 @@ const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::st
    for(const auto& source_file : source_files)
    {
       boost::filesystem::path absolute_path = boost::filesystem::system_complete(source_file);
-      std::string new_path = "-iquote " + absolute_path.branch_path().string() + " ";
+      std::string new_path = "-iquote " + absolute_path.parent_path().string() + " ";
 #ifdef _WIN32
       boost::replace_all(new_path, "\\", "/");
 #endif

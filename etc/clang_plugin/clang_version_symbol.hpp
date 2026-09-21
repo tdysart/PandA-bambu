@@ -1,7 +1,14 @@
 #ifndef CLANG_VERSION_SYMBOL_HPP
 #define CLANG_VERSION_SYMBOL_HPP
 
-#if __clang_major__ == 13
+#if __clang_major__ == 13 || __clang_major__ == 14
+/* clang14 is treated as an alias for the "clang13" plugin slot: bambu's
+   configure/Makefile machinery on this host maps an actual LLVM 14 install
+   into the clang13 slot (v2023.1 predates a real clang14 slot, and no
+   compatible clang13 toolchain is available here), so the plugin symbols
+   must still be named/labeled "clang13" to match what the rest of the
+   build (Makefile.am targets, config headers, tree-panda-gcc, etc.)
+   expects for that slot. */
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang13##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang13" #SYMBOL
 #define CLANG_PLUGIN_INIT(SYMBOL) initializeclang13##SYMBOL##Pass

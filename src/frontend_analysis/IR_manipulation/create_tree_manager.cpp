@@ -72,6 +72,7 @@
 /// Utility include
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include <boost/filesystem/directory.hpp>
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #if HAVE_BAMBU_BUILT

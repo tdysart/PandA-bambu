@@ -39,6 +39,7 @@
  *
  */
 // #undef NDEBUG
+#include <map>
 #include "debug_print.hpp"
 
 #include "plugin_includes.hpp"

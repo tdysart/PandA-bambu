@@ -37,6 +37,8 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include <map>
+#include <set>
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 
 #include <llvm/ADT/Statistic.h>
@@ -249,8 +251,8 @@ class Utilities
       if(call_inst)
       {
          for(auto& op :
-             (llvm::isa<llvm::CallInst>(call_inst) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_operands() :
-                                                     llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_operands()))
+             (llvm::isa<llvm::CallInst>(call_inst) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->args() :
+                                                     llvm::dyn_cast<llvm::InvokeInst>(call_inst)->args()))
          {
             for(unsigned long long d = 0; d < call_trace.size(); ++d)
             {
@@ -1220,8 +1222,8 @@ static void compute_op_exp_and_dims_rec(
       if(auto called_function = getCalledFunction(call_inst))
       {
          auto nOperands = llvm::isa<llvm::CallInst>(call_inst) ?
-                              llvm::dyn_cast<llvm::CallInst>(call_inst)->getNumArgOperands() :
-                              llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getNumArgOperands();
+                              llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_size() :
+                              llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_size();
          for(auto idx = 0u; idx < nOperands; ++idx)
          {
             llvm::Use& op_use = call_inst->getOperandUse(idx);
@@ -1348,8 +1350,8 @@ std::vector<unsigned long long>>>>>& op_exp_and_dim_by_callsite)
    if(call_inst)
    {
       auto nOperands = llvm::isa<llvm::CallInst>(call_inst) ?
-llvm::dyn_cast<llvm::CallInst>(call_inst)->getNumArgOperands() :
-llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getNumArgOperands(); std::vector<std::pair<bool, std::vector<unsigned long
+llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_size() :
+llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_size(); std::vector<std::pair<bool, std::vector<unsigned long
 long>>> init_vec = std::vector<std::pair<bool, std::vector<unsigned long long>>>(nOperands, std::make_pair(false,
 std::vector<unsigned long long>()));
 
@@ -1464,8 +1466,8 @@ static void initialize_callsites(
    if(call_inst)
    {
       auto nOperands = llvm::isa<llvm::CallInst>(call_inst) ?
-                           llvm::dyn_cast<llvm::CallInst>(call_inst)->getNumArgOperands() :
-                           llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getNumArgOperands();
+                           llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_size() :
+                           llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_size();
       std::vector<std::pair<bool, std::vector<unsigned long long>>> init_vec =
           std::vector<std::pair<bool, std::vector<unsigned long long>>>(
               nOperands, std::make_pair(false, std::vector<unsigned long long>()));
@@ -2682,7 +2684,7 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
             std::vector<llvm::Value*> new_call_ops = std::vector<llvm::Value*>();
 
             for(auto& op :
-                (user_call_inst != nullptr ? user_call_inst->arg_operands() : user_invoke_inst->arg_operands()))
+                (user_call_inst != nullptr ? user_call_inst->args() : user_invoke_inst->args()))
             {
                llvm::Value* operand = op.get();
 
@@ -2706,8 +2708,8 @@ expand_signatures_and_call_sites(std::set<llvm::Function*>& function_worklist,
 
             // Put all the pointer operands of the old call site to null
             auto nOperands = llvm::isa<llvm::CallInst>(call_inst) ?
-                                 llvm::dyn_cast<llvm::CallInst>(call_inst)->getNumArgOperands() :
-                                 llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getNumArgOperands();
+                                 llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_size() :
+                                 llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_size();
             for(unsigned short idx = 0; idx < nOperands; ++idx)
             {
                if(call_inst->getOperand(idx)->getType()->isPointerTy())
@@ -3018,7 +3020,7 @@ static void gen_gepi_map(llvm::Value* gepi_base, llvm::Argument* arg, llvm::Use*
             {
 #if __clang_major__ >= 12
                for(unsigned long long idx = 0;
-                   idx < llvm::dyn_cast<llvm::VectorType>(ptd_ty)->getElementCount().getValue(); idx++)
+                   idx < llvm::dyn_cast<llvm::VectorType>(ptd_ty)->getElementCount().getKnownMinValue(); idx++)
 #else
                for(unsigned long long idx = 0; idx < llvm::dyn_cast<llvm::VectorType>(ptd_ty)->getNumElements(); idx++)
 #endif
@@ -3990,8 +3992,8 @@ static void expand_ptrs(const std::set<llvm::Function*> function_worklist,
                   auto called_function = getCalledFunction(call_inst);
 
                   auto nOperands = llvm::isa<llvm::CallInst>(call_inst) ?
-                                       llvm::dyn_cast<llvm::CallInst>(call_inst)->getNumArgOperands() :
-                                       llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getNumArgOperands();
+                                       llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_size() :
+                                       llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_size();
                   for(unsigned op_i = 0u; op_i < nOperands; op_i++)
                   {
                      auto op_u = &(call_inst->getOperandUse(op_i));
@@ -4422,8 +4424,8 @@ static void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::
             auto call_inst = llvm::dyn_cast<llvm::Instruction>(user);
             std::vector<llvm::Value*> call_ops = std::vector<llvm::Value*>();
             for(auto& op :
-                (llvm::isa<llvm::CallInst>(user) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_operands() :
-                                                   llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_operands()))
+                (llvm::isa<llvm::CallInst>(user) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->args() :
+                                                   llvm::dyn_cast<llvm::InvokeInst>(call_inst)->args()))
             {
                llvm::Value* operand = op.get();
 

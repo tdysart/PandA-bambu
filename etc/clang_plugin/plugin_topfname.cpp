@@ -307,7 +307,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_topfname)()
                  return false;
               });
               PB.registerPipelineEarlySimplificationEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+                  [&](llvm::ModulePassManager& MPM, llvm::OptimizationLevel) { return load(MPM); });
            }};
 }
 

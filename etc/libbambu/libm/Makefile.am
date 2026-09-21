@@ -389,17 +389,53 @@ pkglib_LIBRARIES += libm_clang13.a libm_clang13_std.a
 libm_clang13_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
 libm_clang13_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG13
 libm_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libm_clang13_a_CFLAGS += -m64
+libm_clang13_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libm_clang13_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_clang13_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG13
 libm_clang13_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libm_clang13_std_a_CFLAGS += -m64
+libm_clang13_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 
 pkglib_LIBRARIES += libm_clang13_subnormals.a libm_clang13_subnormals_std.a
 libm_clang13_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
 libm_clang13_subnormals_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG13
 libm_clang13_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libm_clang13_subnormals_a_CFLAGS += -m64
+libm_clang13_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 libm_clang13_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
 libm_clang13_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG13
 libm_clang13_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libm_clang13_subnormals_std_a_CFLAGS += -m64
+libm_clang13_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG13 $(common_treegccflags_clang) -m64 -C
+endif
 endif
 
 

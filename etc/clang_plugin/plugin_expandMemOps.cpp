@@ -128,7 +128,7 @@ unsigned llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::getLoopOperandSizeInB
    if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
    {
 #if __clang_major__ >= 12
-      return (VTy->getElementCount().getValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
+      return (VTy->getElementCount().getKnownMinValue() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #else
       return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
 #endif
@@ -247,7 +247,7 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
       {
          llvm::Value* SrcGEP =
              Builder.CreateInBoundsGEP(LoopOpType, srcAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
-         llvm::Value* Load = Builder.CreateLoad(SrcGEP, src_volatile);
+         llvm::Value* Load = Builder.CreateLoad(LoopOpType, SrcGEP, src_volatile);
          llvm::Value* DstGEP =
              Builder.CreateInBoundsGEP(LoopOpType, dstAddress, llvm::ConstantInt::get(TypeOfCopyLen, LI));
          Builder.CreateStore(Load, DstGEP, dst_volatile);
@@ -280,7 +280,7 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
       LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0U), PreLoopBB);
       // Loop Body
       llvm::Value* SrcGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, src_addr, LoopIndex);
-      llvm::Value* Load = LoopBuilder.CreateLoad(SrcGEP, src_volatile);
+      llvm::Value* Load = LoopBuilder.CreateLoad(LoopOpType, SrcGEP, src_volatile);
       llvm::Value* DstGEP = LoopBuilder.CreateInBoundsGEP(LoopOpType, dst_addr, LoopIndex);
       LoopBuilder.CreateStore(Load, DstGEP, dst_volatile);
 
@@ -315,7 +315,7 @@ void llvm::CLANG_VERSION_SYMBOL(_plugin_expandMemOps)::createMemCpyLoopKnownSize
              src_addr->getType() == SrcPtrType ? src_addr : RBuilder.CreateBitCast(src_addr, SrcPtrType);
          llvm::Value* SrcGEP =
              RBuilder.CreateInBoundsGEP(OpTy, CastedSrc, llvm::ConstantInt::get(TypeOfCopyLen, GepIndex));
-         llvm::Value* Load = RBuilder.CreateLoad(SrcGEP, src_volatile);
+         llvm::Value* Load = RBuilder.CreateLoad(OpTy, SrcGEP, src_volatile);
 
          // Cast destination to operand type and store.
          llvm::PointerType* DstPtrType = llvm::PointerType::get(OpTy, DstAS);
@@ -591,7 +591,7 @@ llvm::PassPluginLibraryInfo CLANG_PLUGIN_INFO(_plugin_expandMemOps)()
                  return false;
               });
               PB.registerOptimizerLastEPCallback(
-                  [&](llvm::ModulePassManager& MPM, llvm::PassBuilder::OptimizationLevel) { return load(MPM); });
+                  [&](llvm::ModulePassManager& MPM, llvm::OptimizationLevel) { return load(MPM); });
            }};
 }
 

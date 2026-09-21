@@ -41,10 +41,13 @@
 #ifndef SCALAR_REPLACEMENT_OF_AGGREGATES_PTRITERATORSIMPLIFICATIONPASS_HPP
 #define SCALAR_REPLACEMENT_OF_AGGREGATES_PTRITERATORSIMPLIFICATIONPASS_HPP
 
+#include <set>
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Transforms/Scalar/LoopPassManager.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
+
+#include <map>
 
 unsigned int total_expanded_phis = 0;
 class PtrIteratorSimplifyPass : public llvm::LoopPass
@@ -467,7 +470,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                   std::vector<llvm::Value*> idxs;
                   idxs.push_back(phi_index);
                   llvm::GetElementPtrInst* first_gepi = llvm::GetElementPtrInst::CreateInBounds(
-                      common_external, idxs, phi_iter->getName().str() + ".firstgepi",
+                      common_external->getType()->getPointerElementType(), common_external, idxs,
+                      phi_iter->getName().str() + ".firstgepi",
                       &*phi_iter->getParent()->getFirstInsertionPt());
 
                   llvm::errs() << "      Assigning first gepi " << get_val_string(first_gepi) << " to phi "
@@ -516,7 +520,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
                         std::vector<llvm::Value*> idxs;
                         idxs.push_back(new_idx);
                         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(
-                            common_external, idxs, user_as_gepi->getName().str() + ".gepi", user_as_gepi);
+                            common_external->getType()->getPointerElementType(), common_external, idxs,
+                            user_as_gepi->getName().str() + ".gepi", user_as_gepi);
 
                         llvm::errs() << "            as " << get_val_string(new_gepi) << "\n";
 

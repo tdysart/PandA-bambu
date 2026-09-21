@@ -46,7 +46,6 @@
 #include "ToolManager.hpp"
 
 /// includes all needed Boost.Filesystem declarations
-#include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

@@ -34,6 +34,8 @@
 // Created by Marco Siracusa on 7/27/19.
 //
 
+#include <map>
+#include <set>
 #include "GepiCanonicalizationPass.hpp"
 
 #include <llvm/Analysis/LoopInfo.h>
@@ -1711,7 +1713,8 @@ bool gepi_explicitation(llvm::Function& function)
             if(gep_op->isInBounds())
             {
                assert(!idxs.empty());
-               gepi = llvm::GetElementPtrInst::CreateInBounds(gep_op->getPointerOperand(), idxs, "", insert_point_inst);
+               gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, gep_op->getPointerOperand(), idxs, "",
+                                                              insert_point_inst);
             }
             else
             {

@@ -75,7 +75,6 @@
 #include "hash_helper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/cast.hpp>
-#include <boost/filesystem/convenience.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>

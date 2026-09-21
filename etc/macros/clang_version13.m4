@@ -27,7 +27,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
         I386_CLANG13_VERSION=`$compiler --version |grep clang|grep -v InstalledDir|awk -F' ' '{print $[4]}'| awk -F'-' '{print $[1]}'`
       fi
       AS_VERSION_COMPARE($1, [13.0.0], MIN_CLANG13=[13.0.0], MIN_CLANG13=$1, MIN_CLANG13=$1)
-      AS_VERSION_COMPARE([14.0.0], $2, MAX_CLANG13=[14.0.0], MAX_CLANG13=$2, MAX_CLANG13=$2)
+      AS_VERSION_COMPARE([15.0.0], $2, MAX_CLANG13=[15.0.0], MAX_CLANG13=$2, MAX_CLANG13=$2)
       AS_VERSION_COMPARE($I386_CLANG13_VERSION, $MIN_CLANG13, echo "checking $compiler >= $MIN_CLANG13... no"; min=no, echo "checking $compiler >= $MIN_CLANG13... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG13... yes"; min=yes)
       if test "$min" = "no" ; then
          continue;
@@ -44,6 +44,18 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       I386_LLVM_CONFIG13_EXE=$clang_dir/$llvm_config
       LLVM13_CXXFLAGS=`$I386_LLVM_CONFIG13_EXE --cxxflags`
       I386_LLVM13_CXXFLAGS="$LLVM13_CXXFLAGS -std=c++14 -O2 -DNDEBUG $3"
+      case $host_os in
+        darwin*)
+          dnl non-Apple clang (e.g. a Homebrew LLVM used to stand in for a
+          dnl real clang13 install) doesn't auto-inject the SDK sysroot the
+          dnl way Apple's own clang does, so plugin_test.cpp -- and every
+          dnl real clang13_plugin_*.so build in etc/clang_plugin/clang13.am,
+          dnl which reuses this same I386_LLVM13_CXXFLAGS for both compiling
+          dnl and linking -- fails to find system headers like wchar.h, and
+          dnl then libc++/libSystem at link time, without these.
+          I386_LLVM13_CXXFLAGS="$I386_LLVM13_CXXFLAGS -isysroot `xcrun --show-sdk-path` -L`xcrun --show-sdk-path`/usr/lib -L$clang_dir/../lib/c++ -Wl,-rpath,$clang_dir/../lib/c++"
+        ;;
+      esac
       if test "x$I386_LLVM13_CXXFLAGS" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-13.0 missing?"
          break;
@@ -131,6 +143,17 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       CC=$I386_CLANG13_EXE
       CFLAGS="-m64"
       LDFLAGS=
+      case $host_os in
+        darwin*)
+          dnl this probe deliberately blanks LDFLAGS above to test the
+          dnl compiler's own bare -m64 capability, discarding whatever the
+          dnl outer ./configure LDFLAGS carried -- but a non-Apple clang
+          dnl still needs an explicit sysroot/libpath to link *anything* on
+          dnl Darwin, -m64 or not, or this probe reports a false "no".
+          CFLAGS="$CFLAGS -isysroot `xcrun --show-sdk-path`"
+          LDFLAGS="-L`xcrun --show-sdk-path`/usr/lib"
+        ;;
+      esac
       LIBS=
       AC_LANG_PUSH([C])
       AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG13_M64=yes,I386_CLANG13_M64=no)
@@ -284,7 +307,11 @@ PLUGIN_TEST
              echo plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG13_EXE --ldflags --libs --system-libs`"
            ;;
            darwin*)
-             plugin_option='-fPIC -shared -undefined dynamic_lookup '
+             dnl same rationale as the I386_LLVM13_CXXFLAGS case above: a
+             dnl non-Apple clang needs the SDK sysroot and library paths
+             dnl (including its own bundled libc++, if it has one) spelled
+             dnl out explicitly to link plugin_test.so at all.
+             plugin_option="-fPIC -shared -undefined dynamic_lookup -isysroot `xcrun --show-sdk-path` -L`xcrun --show-sdk-path`/usr/lib -L$clang_dir/../lib/c++ -Wl,-rpath,$clang_dir/../lib/c++"
            ;;
            *)
              plugin_option='-fPIC -shared '

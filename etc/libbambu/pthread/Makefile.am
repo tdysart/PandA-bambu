@@ -124,5 +124,13 @@ if BUILD_I386_CLANG13
 pkglib_LIBRARIES += libpthread_clang13.a
 libpthread_clang13_a_SOURCES = pthread.c
 libpthread_clang13_a_CFLAGS = --compiler=I386_CLANG13 $(common_treegccflags_clang)
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libpthread_clang13_a_CFLAGS += -m64
+endif
 endif
 

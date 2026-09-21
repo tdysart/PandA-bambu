@@ -158,5 +158,14 @@ pkglib_LIBRARIES += libbambu_clang13.a
 libbambu_clang13_a_SOURCES = $(common_libbambu_src)
 libbambu_clang13_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG13
 libbambu_clang13_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG13 -C
+if TARGET_DARWIN
+# clang14 (standing in for the clang13 plugin slot on this host) has no
+# i386 codegen support on Darwin/arm64; force the only bit-width it can
+# build. -m64 must precede -C: tree-panda-gcc's -C takes a required
+# argument, so appending -m64 after -C would be swallowed as -C's
+# argument instead of being parsed as -m64.
+libbambu_clang13_a_CFLAGS += -m64
+libbambu_clang13_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG13 -m64 -C
+endif
 endif
 

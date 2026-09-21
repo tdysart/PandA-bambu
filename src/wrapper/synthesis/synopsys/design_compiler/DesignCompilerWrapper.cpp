@@ -313,7 +313,7 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
       var_file_set->multiValues.push_back(entry);
 
       boost::filesystem::path verilog(v);
-      std::string extension = boost::filesystem::extension(verilog);
+      std::string extension = verilog.extension().string();
       if(extension == ".v" || extension == ".verilog")
       {
          language = HDLWriter_Language::VERILOG;
