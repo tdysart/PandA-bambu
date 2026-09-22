@@ -136,7 +136,11 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " --x-assign fast --x-initial fast --noassert";
    }
 #endif
+#if !defined(__APPLE__)
+   // macOS has no static libSystem/crt0.o, so fully static linking is not possible there
+   // (see the same TARGET_DARWIN carve-out for panda_ALLSTATIC in configure.ac).
    script << " -LDFLAGS -static";
+#endif
    unsigned int nThreads = Param->getOption<bool>(OPT_verilator_parallel) ? std::thread::hardware_concurrency() : 1;
    if(nThreads > 1)
    {

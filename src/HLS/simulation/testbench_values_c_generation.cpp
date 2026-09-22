@@ -202,7 +202,13 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
                                                                              CompilerWrapper_OptimizationSet::O2;
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, default_compiler, opt_lvl));
    std::string compiler_flags =
-       "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -fno-strict-aliasing "
+       "-fwrapv -ffloat-store -flax-vector-conversions -fno-strict-aliasing "
+#if !defined(__APPLE__)
+       // -msse2/-mfpmath=sse select an x86 floating-point unit; meaningless (and rejected by
+       // the compiler) when generating a native testbench executable for a non-x86 host such
+       // as Apple Silicon.
+       "-msse2 -mfpmath=sse "
+#endif
        "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' -D__BAMBU_SIM__ ";
    if(!parameters->isOption(OPT_input_format) ||
       parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C ||

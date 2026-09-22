@@ -107,4 +107,83 @@
   then rebuild/install as shown above. Verify the fix with the same `ar t` check from
   \ref install_macos_ar_symptom "the symptom section" above - you should now see the real `.o` member(s) listed.
 
+  \section install_macos_xml_tb Native Verilator simulation of an XML-testbench build fails with x86-only flags or static linking
+
+  \subsection install_macos_xml_tb_symptom Symptom
+  Using the older, self-contained testbench flow (`--generate-tb=<file.xml>` together with `--simulate
+  --simulator=VERILATOR`, as opposed to the newer `--generate-tb=<file.c>` DPI/co-simulation flow -- see
+  \ref install_macos_xml_tb_vs_dpi "the note below" on the difference) fails at one of several points with
+  errors such as:
+  \verbatim
+  error: unknown FP unit 'sse'
+  ...
+  ld: library 'crt0.o' not found
+  clang++: error: linker command failed with exit code 1
+  \endverbatim
+  or the native reference-value executable fails to compile/link with `'stdio.h' file not found` or
+  `ld: library 'm' not found`.
+
+  \subsection install_macos_xml_tb_cause Cause
+  Two source locations unconditionally pass x86-only flags that a non-x86 host's compiler/linker rejects
+  outright, with no Darwin (or non-x86) carve-out:
+  - `src/HLS/simulation/CTestbenchExecution.cpp` and `src/HLS/simulation/testbench_values_c_generation.cpp`
+    both hard-code `-msse2 -mfpmath=sse` (selecting an x86 floating-point unit) into the flags used to compile
+    the native reference executable that computes expected values for the testbench.
+  - `src/wrapper/simulation/verilator/VerilatorWrapper.cpp` hard-codes `-LDFLAGS -static` for the Verilator
+    build; macOS has no static libSystem/crt0.o, so fully static linking is never possible there (the same
+    reason `configure.ac` already sets `panda_ALLSTATIC=no` under `TARGET_DARWIN`).
+
+  Neither of these was hit by the more commonly-exercised DPI/co-simulation testbench flow (`--generate-tb=
+  <file.c>`), which goes through an entirely different code path (`src/wrapper/compiler/compiler_wrapper.cpp`) --
+  that is why they weren't caught by earlier Darwin porting work.
+
+  Separately (not a bug, just an environment requirement): unlike compiling bambu itself, *running* it also
+  needs a discoverable SDK sysroot, because bambu shells out to the frontend compiler again at simulation time
+  to build the native reference executable. `SDKROOT` (see \ref install_macos_ar_fix "the ar/ranlib fix above"
+  for how to obtain it) only supplies header search paths, not library paths, so the native executable's link
+  step additionally needs `-L<sdkroot>/usr/lib` supplied explicitly via `--testbench-extra-gcc-flags`.
+
+  \subsection install_macos_xml_tb_fix Fix
+  Both hard-coded flag additions were changed to `#if !defined(__APPLE__)`, matching the existing convention
+  already used elsewhere in `testbench_values_c_generation.cpp` (e.g. its handling of `-Wl,--allow-multiple-
+  definition`, which Apple's linker also does not support).
+
+  With that fix in place, a full run on macOS needs `SDKROOT` exported and an explicit SDK library path passed
+  through to the native reference-value build, for example:
+  \verbatim
+  export SDKROOT="$(xcrun --show-sdk-path)"
+  bambu --generate-tb=test.xml --simulate --simulator=VERILATOR --verilator-parallel \
+        --testbench-extra-gcc-flags="-L${SDKROOT}/usr/lib" \
+        ... (other flags) ...
+  \endverbatim
+
+  \subsection install_macos_xml_tb_vs_dpi Note: --generate-tb=<file.c> vs --generate-tb=<file.xml>
+  These are two unrelated testbench mechanisms, not two spellings of the same feature:
+  - `--generate-tb=<file.xml>` (the only form documented in `bambu --help` at this revision) supplies concrete
+    input values for the top function's formal parameters directly, via a `<function><testbench PARAM="{...}"
+    .../></function>` XML document (see `examples/mm_float/test.xml` for a worked example). It has been part
+    of bambu since long before this branch point and needs no DPI runtime at all -- the entire flow (frontend
+    HLS, RTL generation, native reference-value computation, and Verilator simulation) runs as one self-
+    contained process tree.
+  - `--generate-tb=<file.c>` (a C driver source file, e.g. the pattern used by
+    `examples/c-to-verilog/*/forward_kernel_testbench.c` in soda-benchmarks) is a newer capability that
+    delegates stimulus, memory contents, and correctness checking to a DPI-C-imported co-simulation runtime
+    (`libmdpi`) talking to a *separate* driver process. See `verilator-sst`'s `MDPI_TESTBENCH_POC.md` for the
+    (non-deterministic, unresolved) issues hit trying to reuse that flow standalone.
+
+  When pointed at a `.xml` argument value, `--generate-tb`'s argument parser only recognizes the option as an
+  XML path if it ends in literally `.xml`; anything else (including a `.c` file path) silently falls through to
+  a completely different branch that expects an inline `key=value[,key=value]*` string, and fails with the
+  unrelated-looking `Error in processing --simulate arg` (`src/HLS/simulation/test_vector_parser.cpp`) when it
+  cannot find an `=` in what it's given.
+
+  One more XML-format detail worth knowing: a `<testbench>` attribute name must match the *post-preprocessing*
+  formal parameter name, not necessarily the name as written in the function's declaration. A common bambu
+  idiom is to declare `#pragma HLS_interface P0 m_axi direct` per pointer argument alongside a `#define
+  <descriptive_name> P0`-style macro (see `examples/c-to-verilog/3mm-v2/forward_kernel.c` in soda-benchmarks)
+  so the source reads naturally (`A`, `B`, `C`, ...) while every occurrence -- including the parameter name
+  itself -- expands to `P0`, `P1`, etc. before bambu ever parses it. The XML must use those expanded names
+  (`P0="{...}"`, not `A="{...}"`), or bambu fails late, after a full HLS run, with `Value of P0 is missing in
+  test vector`.
+
 */
