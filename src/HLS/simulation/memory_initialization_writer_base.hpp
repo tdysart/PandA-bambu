@@ -109,7 +109,8 @@ class MemoryInitializationWriterBase : public CInitializationParserFunctor
                                   const unsigned long int reserved_mem_bytes,
                                   const tree_nodeConstRef function_parameter,
                                   const TestbenchGeneration_MemoryType testbench_generation_memory_type,
-                                  const ParameterConstRef parameters);
+                                  const ParameterConstRef parameters,
+                                  const tree_nodeConstRef parameter_type = tree_nodeConstRef());
 
    /**
     * Check that all the necessary information was present in the initialization string

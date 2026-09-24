@@ -76,6 +76,9 @@
 #include "hls_function_bit_value.hpp"
 #include "hls_synthesis_flow.hpp"
 #include "initialize_hls.hpp"
+#include "legacy_minimal_interface_testbench.hpp"
+#include "legacy_testbench_memory_allocation.hpp"
+#include "legacy_testbench_values_xml_generation.hpp"
 #include "mem_dominator_allocation.hpp"
 #include "mem_dominator_allocation_cs.hpp"
 #include "memory.hpp"
@@ -90,8 +93,6 @@
 #include "standard_hls.hpp"
 #include "string_manipulation.hpp"
 #include "synthesis_evaluation.hpp"
-#include "legacy_testbench_memory_allocation.hpp"
-#include "legacy_testbench_values_xml_generation.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
 #include "top_entity.hpp"
@@ -482,6 +483,12 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
       case HLSFlowStep_Type::TEST_VECTOR_PARSER:
       {
          design_flow_step = DesignFlowStepRef(new TestVectorParser(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION:
+      {
+         design_flow_step =
+             DesignFlowStepRef(new LegacyMinimalInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION:

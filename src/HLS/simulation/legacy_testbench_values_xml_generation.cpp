@@ -75,8 +75,7 @@ LegacyTestbenchValuesXMLGeneration::LegacyTestbenchValuesXMLGeneration(
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-HLS_step::HLSRelationships
-LegacyTestbenchValuesXMLGeneration::ComputeHLSRelationships(
+HLS_step::HLSRelationships LegacyTestbenchValuesXMLGeneration::ComputeHLSRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {
    HLSRelationships ret;
@@ -156,7 +155,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
    const auto fname = tree_helper::GetMangledFunctionName(GetPointerS<const function_decl>(fnode));
    const auto func_arch = HLSMgr->module_arch ? HLSMgr->module_arch->GetArchitecture(fname) : nullptr;
    /// Fixed-point (ac_fixed) interface type of a parameter, or an empty string
-   const auto fixed_typename = [&](const std::string& param) -> std::string {
+   const auto fixed_typename = [&](const std::string& param) -> std::string
+   {
       if(func_arch && func_arch->parms.count(param) &&
          func_arch->parms.at(param).count(FunctionArchitecture::parm_typename))
       {
@@ -226,7 +226,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
          }
 
          /// Retrieve the space to be reserved in memory
-         const auto reserved_mem_bytes = [&]() -> size_t {
+         const auto reserved_mem_bytes = [&]() -> size_t
+         {
             if(is_memory)
             {
                return tree_helper::SizeAlloc(TM->GetTreeNode(l)) / 8;
@@ -256,7 +257,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
             const CInitializationParserFunctorRef c_initialization_parser_functor =
                 CInitializationParserFunctorRef(new MemoryInitializationWriter(
                     output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->GetTreeNode(l),
-                    TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, parameters));
+                    TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, parameters,
+                    LegacyTypedPointerType(HLSMgr, parameters, l)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Parsing initialization of " + param + "(" +
                                tree_helper::CGetType(TM->GetTreeNode(l))->get_kind_text() + "): " + test_v);
@@ -311,7 +313,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
                            "-->Considering parameter " + STR(function_parameter));
             const auto param = behavioral_helper->PrintVariable(function_parameter->index);
             /// Without an explicit expected output, the pointed memory is expected to be unchanged
-            const auto expected_values = [&]() -> std::string {
+            const auto expected_values = [&]() -> std::string
+            {
                const auto ctv = curr_test_vector.count(param + ":output") ? curr_test_vector.at(param + ":output") :
                                                                             curr_test_vector.at(param);
                const auto argTypename = fixed_typename(param);
@@ -319,7 +322,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
             }();
             const CInitializationParserFunctorRef c_initialization_parser_functor(new MemoryInitializationWriter(
                 output_stream, TM, behavioral_helper, all_reserved_mem_bytes.at(v_idx).at(function_parameter->index),
-                function_parameter, TestbenchGeneration_MemoryType::OUTPUT_PARAMETER, parameters));
+                function_parameter, TestbenchGeneration_MemoryType::OUTPUT_PARAMETER, parameters,
+                LegacyTypedPointerType(HLSMgr, parameters, function_parameter->index)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Parsing expected output for " + param + ": " + expected_values);
             c_initialization_parser->Parse(c_initialization_parser_functor, expected_values);

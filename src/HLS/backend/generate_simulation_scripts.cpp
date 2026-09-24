@@ -110,6 +110,12 @@ void GenerateSimulationScripts::ComputeRelationships(DesignFlowStepSet& design_f
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         if(parameters->isOption(OPT_testbench_style) &&
+            parameters->getOption<std::string>(OPT_testbench_style) == "legacy")
+         {
+            /// The legacy self-contained Verilog testbench needs no C testbench or DPI-C driver wrapper
+            break;
+         }
          const auto c_backend_factory = GetPointer<const CBackendStepFactory>(
              design_flow_manager.lock()->CGetDesignFlowStepFactory(DesignFlowStep::C_BACKEND));
 

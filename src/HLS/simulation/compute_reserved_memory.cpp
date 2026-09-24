@@ -51,14 +51,16 @@
 /// utility include
 #include "exceptions.hpp"
 
-ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn)
-    : TM(_TM), tn(_tn), elements_number(1), depth_level(0)
+ComputeReservedMemory::ComputeReservedMemory(const tree_managerConstRef _TM, const tree_nodeConstRef _tn,
+                                             const tree_nodeConstRef _ptd_type)
+    : TM(_TM), tn(_tn), ptd_type_override(_ptd_type), elements_number(1), depth_level(0)
 {
 }
 
 unsigned long long ComputeReservedMemory::GetReservedBytes() const
 {
-   const auto ptd_type = tree_helper::CGetPointedType(tree_helper::CGetType(tn));
+   const auto ptd_type =
+       ptd_type_override ? ptd_type_override : tree_helper::CGetPointedType(tree_helper::CGetType(tn));
    auto reservedMem = elements_number * tree_helper::SizeAlloc(ptd_type) / 8;
    return reservedMem ? reservedMem : 1;
 }

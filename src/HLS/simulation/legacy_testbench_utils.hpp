@@ -56,11 +56,35 @@ inline std::string LegacyPrintVarInit(const tree_managerConstRef TM, unsigned in
    return boost::algorithm::join(TestbenchGeneration::print_var_init(TM, var, mem), ",");
 }
 
+REF_FORWARD_DECL(HLS_manager);
+CONSTREF_FORWARD_DECL(tree_node);
+
+/**
+ * Pointed type of a pointer parameter of the top function. With opaque pointers the IR only has void*, so the
+ * type is rebuilt from the original C typename of the parameter (module_arch parm_original_typename).
+ * @return the pointed type, or null if the parameter is not a pointer
+ */
+tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                    unsigned int param_index);
+
+/**
+ * As LegacyPointedType, with the parameter of the top function identified by name (e.g. from a DUT port name:
+ * with opaque pointers all pointer parameters share the same type node, so port types cannot identify them)
+ */
+tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                    const std::string& param_name);
+
+/**
+ * Type of a parameter of the top function, with an opaque (void) pointer replaced by a pointer to the type
+ * returned by LegacyPointedType.
+ */
+tree_nodeConstRef LegacyTypedPointerType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                         unsigned int param_index);
+
 /// true when the legacy testbench generator has been requested (--testbench-style=legacy|both)
 inline bool LegacyTestbenchRequested(const ParameterConstRef parameters)
 {
-   return parameters->isOption(OPT_testbench_style) &&
-          parameters->getOption<std::string>(OPT_testbench_style) != "dpi";
+   return parameters->isOption(OPT_testbench_style) && parameters->getOption<std::string>(OPT_testbench_style) != "dpi";
 }
 
 /// true when the legacy testbench generator is the only one requested (--testbench-style=legacy)

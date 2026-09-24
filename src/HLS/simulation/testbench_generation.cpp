@@ -40,6 +40,8 @@
  */
 #include "testbench_generation.hpp"
 
+#include "legacy_testbench_utils.hpp"
+
 #include "Discrepancy.hpp"
 #include "HDL_manager.hpp"
 #include "ModuleGeneratorManager.hpp"
@@ -105,6 +107,12 @@ TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
+         if(LegacyTestbenchRequested(parameters))
+         {
+            /// --testbench-style=legacy|both: also generate the bambu 2023.1 self-contained Verilog testbench
+            ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION,
+                                       HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
          if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
          {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_SIGNAL_SELECTION, HLSFlowStepSpecializationConstRef(),
@@ -145,6 +153,12 @@ void TestbenchGeneration::Initialize()
 
 DesignFlowStep_Status TestbenchGeneration::Exec()
 {
+   if(LegacyTestbenchOnly(parameters))
+   {
+      /// The legacy testbench (and HLSMgr->RSim->filename_bench) was produced by LegacyTestbenchGeneration
+      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---Using the legacy testbench, DPI-C testbench skipped");
+      return DesignFlowStep_Status::SUCCESS;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Generating testbench HDL");
    const structural_managerRef tb_top(new structural_manager(parameters));
    tb_top->set_top_info(CST_STR_BAMBU_TESTBENCH "_impl",

@@ -49,11 +49,13 @@ if BUILD_SIMULATION
   noinst_HEADERS += \
     wrapper/simulation/SimulationTool.hpp \
     wrapper/simulation/modelsim/modelsimWrapper.hpp \
+    wrapper/simulation/verilator/LegacyVerilatorWrapper.hpp \
     wrapper/simulation/verilator/VerilatorWrapper.hpp \
     wrapper/simulation/xsim/VIVADO_xsim_wrapper.hpp
   lib_simulation_la_SOURCES = \
     wrapper/simulation/SimulationTool.cpp \
     wrapper/simulation/modelsim/modelsimWrapper.cpp \
+    wrapper/simulation/verilator/LegacyVerilatorWrapper.cpp \
     wrapper/simulation/verilator/VerilatorWrapper.cpp \
     wrapper/simulation/xsim/VIVADO_xsim_wrapper.cpp
   lib_wrapper_la_LIBADD += lib_simulation.la

@@ -50,22 +50,61 @@ These helpers from 2023.1 are still in the tree, unused, and can be reused:
 ## Plan (phase 1)
 
 - [x] `--testbench-style` option and parameter checks
-- [ ] `SimulationInformation`: restore `param_address`, `param_mem_size`,
+- [x] `SimulationInformation`: restore `param_address`, `param_mem_size`,
       `param_next_off`, `simulationArgSignature`, `results_available`
-- [ ] `TestVectorParser`: parse expected outputs again (`:output`,
+- [x] `TestVectorParser`: parse expected outputs again (`:output`,
       `:init_output_file`, `return`). The DPI C writer looks parameters up by
       name, so the extra keys don't affect it.
-- [ ] Port `TestbenchMemoryAllocation` (reserve per-argument buffers in `Rmem`)
-- [ ] Port `TestbenchValuesXMLGeneration` (writes `simulation/values.txt`)
-- [ ] Port `TestbenchGenerationBaseStep` and `MinimalInterfaceTestbench`
-      (Verilator path only) as the legacy testbench generation step
-- [ ] Hook the steps in: `TestbenchGeneration` delegates to them for
+- [x] Port `TestbenchMemoryAllocation` (reserve per-argument buffers in `Rmem`)
+- [x] Port `TestbenchValuesXMLGeneration` (writes `simulation/values.txt`)
+- [x] Port `TestbenchGenerationBaseStep` and `MinimalInterfaceTestbench`
+      as `LegacyTestbenchGenerationBaseStep`/`LegacyMinimalInterfaceTestbench`
+      (mechanical rewrite of the 2023.1 sources plus the API fixes below)
+- [x] Hook the steps in: `TestbenchGeneration` depends on them for
       `legacy`/`both`, and `GenerateSimulationScripts` skips the DPI C-backend
       steps for `legacy`
-- [ ] Legacy Verilator simulation script and the old `results.txt` parser
-      (`<pass> <cycles>` per line) for `SimulationEvaluation`
-- [ ] Validate against bambu 2023.1 on the same input (the soda-benchmarks
-      3mm example). The testbench should differ only where the 2024 DUT does.
+- [x] `LegacyVerilatorWrapper`: plain Verilator script and the 2023.1
+      `results.txt` parser, selected by `SimulationTool::CreateSimulationTool`
+      for `legacy`
+- [x] Validate on the soda-benchmarks 3mm kernel (llvm-cbe C, asap7-BC, 5 ns):
+      `legacy` passes in 15476 cycles, the same count as the DPI testbench on
+      the same XML. `both` passes and generates both testbenches, and a
+      corrupted expected output fails with "Simulation not correct!". The
+      generated testbench matches 2023.1's except where the DUT changed
+      (address width, memory layout, `Mout_back_pressure`).
+
+## Findings
+
+Things that differ from simply restoring the 2023.1 code:
+
+- **Opaque pointers.** With clang 16 the IR only has `void*` for pointer
+  arguments, so the 2023.1 code sized buffers as bytes and failed on `void`.
+  `LegacyPointedType` rebuilds the pointed type from the parameter's
+  `parm_original_typename` in `module_arch` (C scalar types for now).
+  `MemoryInitializationWriter` and `ComputeReservedMemory` take an optional
+  type override for it. Port types can't identify parameters any more, since
+  all pointers share one type node, so ports are matched by name.
+- **`Mout_back_pressure`.** The 2024 DUT has a memory back-pressure input.
+  The legacy memory model never stalls, so it is tied to 0.
+- **Start race.** `currTime` was updated with a blocking assignment in a
+  posedge block, while `next_start_port` is derived combinationally from it
+  and sampled by two other posedge blocks. Depending on evaluation order the
+  DUT could start without the stimuli being read. It passed by luck with the
+  2023.1 DUT and hung with the 2024 one. It is now a non-blocking assignment.
+- **Floating point expected outputs from XML** were written byte by byte,
+  while the testbench compares real values element by element (ULP). 2023.1
+  used this path only with the C-based values generation, which wrote them
+  full width. The XML writer now does the same.
+- **`--timescale-override 1ps/1ps`.** 2024 no longer sets it, but the testbench's
+  `HALF_CLOCK_PERIOD 1` relies on it. `LegacyVerilatorWrapper` probes
+  Verilator and passes it.
+
+## Next
+
+- Phase 2: expected values from a host execution of the C code (port the
+  pre-DPI `HLSCWriter`), so the XML only needs inputs
+- Struct/array element types in `LegacyPointedType`
+- Non-Verilator simulators (the `_tb_top` wrapper path is ported but unused)
 
 ## API changes to expect (2023.1 to 2024.10)
 

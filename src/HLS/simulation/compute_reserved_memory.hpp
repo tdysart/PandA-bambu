@@ -64,6 +64,9 @@ class ComputeReservedMemory : public CInitializationParserFunctor
    /// The tree node to be stored in memory
    const tree_nodeConstRef tn;
 
+   /// The pointed type, if it overrides the one of tn
+   const tree_nodeConstRef ptd_type_override;
+
    /// The number of elements in the top level
    unsigned int elements_number;
 
@@ -76,7 +79,12 @@ class ComputeReservedMemory : public CInitializationParserFunctor
     * @param TM is the tree manager
     * @param tn is the variable/parameter to be stored in memory
     */
-   ComputeReservedMemory(const tree_managerConstRef TM, const tree_nodeConstRef tn);
+   /**
+    * @param tn is the pointer variable whose pointed memory is reserved
+    * @param ptd_type overrides the pointed type of tn (e.g. when the IR only has an opaque pointer)
+    */
+   ComputeReservedMemory(const tree_managerConstRef TM, const tree_nodeConstRef tn,
+                         const tree_nodeConstRef ptd_type = tree_nodeConstRef());
 
    /**
     * Return the computed value

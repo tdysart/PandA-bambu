@@ -115,7 +115,8 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
    const auto top_fnode = TM->GetFunction(top_symbols.front());
    const auto function_id = top_fnode->index;
    const auto BH = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
-   const auto get_param_name = [&](const unsigned int p) {
+   const auto get_param_name = [&](const unsigned int p)
+   {
       const auto param = BH->PrintVariable(p);
       if(param.front() == '"')
       {
@@ -157,7 +158,8 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
    unsigned int v_idx = 0;
    for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
    {
-      const auto get_type_bytes = [&](const unsigned int p, const std::string& param, const bool is_memory) {
+      const auto get_type_bytes = [&](const unsigned int p, const std::string& param, const bool is_memory)
+      {
          std::string test_v = "0";
          if(is_memory)
          {
@@ -185,8 +187,9 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
             }
             else if(flag_cpp)
             {
-               const auto base_type_byte_size = [&]() -> unsigned long long {
-                  const auto ptd_base_type = tree_helper::CGetPointedType(l_type);
+               const auto base_type_byte_size = [&]() -> unsigned long long
+               {
+                  const auto ptd_base_type = LegacyPointedType(HLSMgr, parameters, p);
                   std::string param_if_typename;
                   if(func_arch && func_arch->parms.count(param) &&
                      func_arch->parms.at(param).count(FunctionArchitecture::parm_typename))
@@ -214,7 +217,7 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
             else
             {
                const CInitializationParserFunctorRef c_initialization_parser_functor(
-                   new ComputeReservedMemory(TM, lnode));
+                   new ComputeReservedMemory(TM, lnode, LegacyPointedType(HLSMgr, parameters, p)));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                const auto reserved_bytes =
                    GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();

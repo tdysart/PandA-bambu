@@ -43,6 +43,7 @@
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
+#include "LegacyVerilatorWrapper.hpp"
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "VIVADO_xsim_wrapper.hpp"
@@ -112,6 +113,11 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
          return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, top_fname, inc_dirs));
          break;
       case VERILATOR:
+         if(_Param->isOption(OPT_testbench_style) && _Param->getOption<std::string>(OPT_testbench_style) == "legacy")
+         {
+            /// self-contained Verilog testbench, no DPI-C co-simulation
+            return SimulationToolRef(new LegacyVerilatorWrapper(_Param, top_fname, inc_dirs));
+         }
          return SimulationToolRef(new VerilatorWrapper(_Param, top_fname, inc_dirs));
          break;
       default:

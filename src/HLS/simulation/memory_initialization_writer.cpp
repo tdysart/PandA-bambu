@@ -67,9 +67,10 @@
 MemoryInitializationWriter::MemoryInitializationWriter(
     std::ofstream& _output_stream, const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper,
     const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
-    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters)
+    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef _parameters,
+    const tree_nodeConstRef _parameter_type)
     : MemoryInitializationWriterBase(_TM, _behavioral_helper, _reserved_mem_bytes, _function_parameter,
-                                     _testbench_generation_memory_type, _parameters),
+                                     _testbench_generation_memory_type, _parameters, _parameter_type),
       output_stream(_output_stream)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -223,9 +224,18 @@ void MemoryInitializationWriter::Process(const std::string& content)
          output_stream << "//expected value for output " + behavioral_helper->PrintVariable(function_parameter->index) +
                               ": "
                        << content << std::endl;
-         for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+         if(base_type->get_kind() == real_type_K)
          {
-            output_stream << "o" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
+            /// the testbench compares floating point outputs element by element (ULP distance), so they are
+            /// expected on a single line, as the C-based values generation writes them
+            output_stream << "o" << binary_value << std::endl;
+         }
+         else
+         {
+            for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+            {
+               output_stream << "o" << binary_value.substr(binary_value.size() - 8 - bit, 8) << std::endl;
+            }
          }
          break;
       case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:

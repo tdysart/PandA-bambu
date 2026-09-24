@@ -67,7 +67,8 @@
 MemoryInitializationWriterBase::MemoryInitializationWriterBase(
     const tree_managerConstRef _TM, const BehavioralHelperConstRef _behavioral_helper,
     const unsigned long int _reserved_mem_bytes, const tree_nodeConstRef _function_parameter,
-    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef)
+    const TestbenchGeneration_MemoryType _testbench_generation_memory_type, const ParameterConstRef,
+    const tree_nodeConstRef _parameter_type)
     : TM(_TM),
       behavioral_helper(_behavioral_helper),
       reserved_mem_bytes(_reserved_mem_bytes),
@@ -75,7 +76,9 @@ MemoryInitializationWriterBase::MemoryInitializationWriterBase(
       function_parameter(_function_parameter),
       testbench_generation_memory_type(_testbench_generation_memory_type)
 {
-   const auto parameter_type = tree_helper::CGetType(function_parameter);
+   /// _parameter_type overrides the type of function_parameter, e.g. with a typed pointer when the IR only has an
+   /// opaque (void) pointer
+   const auto parameter_type = _parameter_type ? _parameter_type : tree_helper::CGetType(function_parameter);
    status.push_back(std::make_pair(parameter_type, 0));
 }
 
