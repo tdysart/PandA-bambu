@@ -90,6 +90,8 @@
 #include "standard_hls.hpp"
 #include "string_manipulation.hpp"
 #include "synthesis_evaluation.hpp"
+#include "legacy_testbench_memory_allocation.hpp"
+#include "legacy_testbench_values_xml_generation.hpp"
 #include "test_vector_parser.hpp"
 #include "testbench_generation.hpp"
 #include "top_entity.hpp"
@@ -482,6 +484,18 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
          design_flow_step = DesignFlowStepRef(new TestVectorParser(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION:
+      {
+         design_flow_step = DesignFlowStepRef(
+             new LegacyTestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION:
+      {
+         design_flow_step = DesignFlowStepRef(
+             new LegacyTestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
       {
          design_flow_step = DesignFlowStepRef(new top_entity(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -608,6 +622,9 @@ DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::HW_PATH_COMPUTATION:
          case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
          case HLSFlowStep_Type::TESTBENCH_GENERATION:
+         case HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION:
+         case HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION:
+         case HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION:
 #if HAVE_VCD_BUILT
          case HLSFlowStep_Type::VCD_SIGNAL_SELECTION:
          case HLSFlowStep_Type::VCD_UTILITY:

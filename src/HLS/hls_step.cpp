@@ -192,6 +192,12 @@ std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type)
          return "InitializeHLS";
       case HLSFlowStep_Type::INTERFACE_CS_GENERATION:
          return "InterfaceCSGeneration";
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION:
+         return "LegacyTestbenchGeneration";
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION:
+         return "LegacyTestbenchMemoryAllocation";
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION:
+         return "LegacyTestbenchValuesXMLGeneration";
       case HLSFlowStep_Type::LIST_BASED_SCHEDULING:
          return "ParametricListBased";
       case HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION:

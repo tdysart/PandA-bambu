@@ -49,6 +49,9 @@ noinst_HEADERS = \
    c_initialization_parser_node.hpp \
    CTestbenchExecution.hpp \
    compute_reserved_memory.hpp \
+   legacy_testbench_memory_allocation.hpp \
+   legacy_testbench_utils.hpp \
+   legacy_testbench_values_xml_generation.hpp \
    memory_initialization_writer.hpp \
    memory_initialization_writer_base.hpp \
    memory_initialization_c_writer.hpp \
@@ -63,6 +66,8 @@ lib_simulation_la_SOURCES = \
    c_initialization_yparser.ypp \
    CTestbenchExecution.cpp \
    compute_reserved_memory.cpp \
+   legacy_testbench_memory_allocation.cpp \
+   legacy_testbench_values_xml_generation.cpp \
    memory_initialization_writer.cpp \
    memory_initialization_writer_base.cpp \
    memory_initialization_c_writer.cpp \

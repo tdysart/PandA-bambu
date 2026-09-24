@@ -271,8 +271,42 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
                }
+               /// Expected outputs, used only by the legacy testbench generator; the DPI-C
+               /// testbench looks parameters up by name and ignores these entries
+               if((Enode)->get_attribute(param + ":output"))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  test_vector[param + ":output"] = STR((Enode)->get_attribute(param + ":output")->get_value());
+               }
+               else if((Enode)->get_attribute(param + ":init_output_file"))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  auto output_file =
+                      std::filesystem::path(Enode->get_attribute(param + ":init_output_file")->get_value());
+                  if(output_file.is_relative())
+                  {
+                     output_file = input_xml_filename.parent_path() / output_file;
+                  }
+                  const auto input_file = fileIO_istream_open(output_file.string());
+                  test_vector[param + ":output"] =
+                      std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+               }
+            }
+            if(tree_helper::GetFunctionReturnType(top_fnode) && (Enode)->get_attribute("return"))
+            {
+               HLSMgr->RSim->results_available = true;
+               test_vector["return"] = (Enode)->get_attribute("return")->get_value();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Expected return value is " + test_vector["return"]);
             }
             test_vectors.emplace_back(std::move(test_vector));
+         }
+         /// If discrepancy is enabled, then xml output is ignored
+         if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy) &&
+            HLSMgr->RSim->results_available)
+         {
+            HLSMgr->RSim->results_available = false;
+            THROW_WARNING("Output stored in xml file will be ignored since discrepancy analysis is enabled");
          }
          return test_vectors;
       }
