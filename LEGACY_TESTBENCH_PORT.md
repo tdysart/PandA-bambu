@@ -72,6 +72,12 @@ These helpers from 2023.1 are still in the tree, unused, and can be reused:
       corrupted expected output fails with "Simulation not correct!". The
       generated testbench matches 2023.1's except where the DUT changed
       (address width, memory layout, `Mout_back_pressure`).
+- [x] Validate from soda-opt's LLVM IR directly (no llvm-cbe), with
+      `--architecture-xml` giving the pointer arguments' C types and expected
+      outputs from a host run of the IR (soda-benchmarks
+      `scripts/mkinc/llvm_to_verilog_legacy_tb.mk`): passes in 15473 cycles
+      with Verilator and under SST (verilator-sst), and a corrupted expected
+      output fails.
 
 ## Findings
 
@@ -95,6 +101,13 @@ Things that differ from simply restoring the 2023.1 code:
   while the testbench compares real values element by element (ULP). 2023.1
   used this path only with the C-based values generation, which wrote them
   full width. The XML writer now does the same.
+- **LLVM IR input.** Without a C front end, `InterfaceInfer` names every
+  pointer argument's type `void*`, so `LegacyPointedType` has nothing to go
+  on. Passing `--architecture-xml` with `original_typename="float*"` (the
+  format bambu's clang plugin writes) fixes it; the parameters are `P0..PN`.
+- **Relative paths.** The testbench opens `HLS_output/simulation/values.txt`
+  and `results.txt` relative to the working directory (2023.1 used absolute
+  paths), so it must run from bambu's output directory.
 - **`--timescale-override 1ps/1ps`.** 2024 no longer sets it, but the testbench's
   `HALF_CLOCK_PERIOD 1` relies on it. `LegacyVerilatorWrapper` probes
   Verilator and passes it.
