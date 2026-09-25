@@ -1,4 +1,4 @@
-# Porting the bambu 2023.1 XML testbench generator
+#Porting the bambu 2023.1 XML testbench generator
 
 Working notes for `feature/legacy-xml-testbench`. This branch brings back the
 self-contained Verilog testbench that bambu 2023.1 generated from an XML test
@@ -12,11 +12,19 @@ DPI-C or a second process, such as verilator-sst.
 
 ## Selection
 
-`--testbench-style=dpi|legacy|both` (default `dpi`, which leaves current
+`--testbench-style=dpi|verilog|both` (default `dpi`, which leaves current
 behavior unchanged):
 
-- `legacy`: generate and simulate the ported testbench only.
-- `both`: generate both testbenches; simulation uses the DPI-C one.
+- `verilog`: generate and simulate the ported testbench only.
+- `both`: generate both testbenches;
+simulation uses the DPI -
+    C one.
+
+    The style was called `legacy` until 2026 -
+    09 - 25,
+    which is why the branch name still says so;
+the option value, classes, files and steps now use
+`verilog`/`Verilog`/`VERILOG_TESTBENCH_*`.
 
 The ported generator is currently limited to the minimal interface,
 `--simulator=VERILATOR`, and a single XML `--generate-tb` file. These limits
@@ -33,7 +41,10 @@ The generator was removed by these upstream commits:
 - 4ee27c6eb: testbench_memory_allocation, and SimulationInformation fields
 
 These helpers from 2023.1 are still in the tree, unused, and can be reused:
-`memory_initialization_writer{,_base}`, `memory_initialization_c_writer`,
+`memory_initialization_writer
+{
+   , _base
+}`, `memory_initialization_c_writer`,
 `compute_reserved_memory`, `c_initialization_parser*`.
 
 ## Expected values
@@ -58,16 +69,16 @@ These helpers from 2023.1 are still in the tree, unused, and can be reused:
 - [x] Port `TestbenchMemoryAllocation` (reserve per-argument buffers in `Rmem`)
 - [x] Port `TestbenchValuesXMLGeneration` (writes `simulation/values.txt`)
 - [x] Port `TestbenchGenerationBaseStep` and `MinimalInterfaceTestbench`
-      as `LegacyTestbenchGenerationBaseStep`/`LegacyMinimalInterfaceTestbench`
+      as `VerilogTestbenchGenerationBaseStep`/`VerilogMinimalInterfaceTestbench`
       (mechanical rewrite of the 2023.1 sources plus the API fixes below)
 - [x] Hook the steps in: `TestbenchGeneration` depends on them for
-      `legacy`/`both`, and `GenerateSimulationScripts` skips the DPI C-backend
-      steps for `legacy`
-- [x] `LegacyVerilatorWrapper`: plain Verilator script and the 2023.1
+      `verilog`/`both`, and `GenerateSimulationScripts` skips the DPI C-backend
+      steps for `verilog`
+- [x] `VerilogVerilatorWrapper`: plain Verilator script and the 2023.1
       `results.txt` parser, selected by `SimulationTool::CreateSimulationTool`
-      for `legacy`
+      for `verilog`
 - [x] Validate on the soda-benchmarks 3mm kernel (llvm-cbe C, asap7-BC, 5 ns):
-      `legacy` passes in 15476 cycles, the same count as the DPI testbench on
+      `verilog` passes in 15476 cycles, the same count as the DPI testbench on
       the same XML. `both` passes and generates both testbenches, and a
       corrupted expected output fails with "Simulation not correct!". The
       generated testbench matches 2023.1's except where the DUT changed
@@ -75,13 +86,13 @@ These helpers from 2023.1 are still in the tree, unused, and can be reused:
 - [x] Validate from soda-opt's LLVM IR directly (no llvm-cbe), with
       `--architecture-xml` giving the pointer arguments' C types and expected
       outputs from a host run of the IR (soda-benchmarks
-      `scripts/mkinc/llvm_to_verilog_legacy_tb.mk`): passes in 15473 cycles
+      `scripts/mkinc/llvm_to_verilog_verilog_tb.mk`): passes in 15473 cycles
       with Verilator and under SST (verilator-sst), and a corrupted expected
       output fails.
 - [x] Phase 2: expected outputs from a host execution of the specification,
-      so the XML only needs inputs. `LegacyTestbenchExpectedValues` runs when
+      so the XML only needs inputs. `VerilogTestbenchExpectedValues` runs when
       the test vectors carry no expected outputs. It writes a C driver
-      (`HLS_output/simulation/legacy_expected_values.c`) that calls the top
+      (`HLS_output/simulation/verilog_expected_values.c`) that calls the top
       function on every test vector and prints the final content of its
       pointer parameters and its return value, links it with the input files
       (C or LLVM IR) through `CompilerWrapper`, runs it, and stores the
@@ -98,13 +109,13 @@ Things that differ from simply restoring the 2023.1 code:
 
 - **Opaque pointers.** With clang 16 the IR only has `void*` for pointer
   arguments, so the 2023.1 code sized buffers as bytes and failed on `void`.
-  `LegacyPointedType` rebuilds the pointed type from the parameter's
+  `VerilogPointedType` rebuilds the pointed type from the parameter's
   `parm_original_typename` in `module_arch` (C scalar types for now).
   `MemoryInitializationWriter` and `ComputeReservedMemory` take an optional
   type override for it. Port types can't identify parameters any more, since
   all pointers share one type node, so ports are matched by name.
 - **`Mout_back_pressure`.** The 2024 DUT has a memory back-pressure input.
-  The legacy memory model never stalls, so it is tied to 0.
+  The testbench memory model never stalls, so it is tied to 0.
 - **Start race.** `currTime` was updated with a blocking assignment in a
   posedge block, while `next_start_port` is derived combinationally from it
   and sampled by two other posedge blocks. Depending on evaluation order the
@@ -115,7 +126,7 @@ Things that differ from simply restoring the 2023.1 code:
   used this path only with the C-based values generation, which wrote them
   full width. The XML writer now does the same.
 - **LLVM IR input.** Without a C front end, `InterfaceInfer` names every
-  pointer argument's type `void*`, so `LegacyPointedType` has nothing to go
+  pointer argument's type `void*`, so `VerilogPointedType` has nothing to go
   on. Passing `--architecture-xml` with `original_typename="float*"` (the
   format bambu's clang plugin writes) fixes it; the parameters are `P0..PN`.
 - **Return values** were not followed by the `e` the testbench waits for,
@@ -129,12 +140,12 @@ Things that differ from simply restoring the 2023.1 code:
   and `results.txt` relative to the working directory (2023.1 used absolute
   paths), so it must run from bambu's output directory.
 - **`--timescale-override 1ps/1ps`.** 2024 no longer sets it, but the testbench's
-  `HALF_CLOCK_PERIOD 1` relies on it. `LegacyVerilatorWrapper` probes
+  `HALF_CLOCK_PERIOD 1` relies on it. `VerilogVerilatorWrapper` probes
   Verilator and passes it.
 
 ## Next
 
-- Struct/array element types in `LegacyPointedType`
+- Struct/array element types in `VerilogPointedType`
 - Non-Verilator simulators (the `_tb_top` wrapper path is ported but unused)
 
 ## API changes to expect (2023.1 to 2024.10)

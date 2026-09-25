@@ -31,20 +31,20 @@
  *
  */
 /**
- * @file legacy_testbench_expected_values.hpp
- * @brief Compute the expected outputs of the legacy (bambu 2023.1, XML-driven) testbench by executing the
- * specification on the host.
+ * @file verilog_testbench_expected_values.hpp
+ * @brief Compute the expected outputs of the self-contained Verilog (bambu 2023.1, XML-driven) testbench by executing
+ * the specification on the host.
  *
  * Takes the place of 2023.1's TestbenchValuesCGeneration, whose HLSCWriter was replaced by the DPI-C testbench.
  */
-#ifndef LEGACY_TESTBENCH_EXPECTED_VALUES_HPP
-#define LEGACY_TESTBENCH_EXPECTED_VALUES_HPP
+#ifndef VERILOG_TESTBENCH_EXPECTED_VALUES_HPP
+#define VERILOG_TESTBENCH_EXPECTED_VALUES_HPP
 
 #include "hls_step.hpp"
 
 #include <filesystem>
 
-class LegacyTestbenchExpectedValues : public HLS_step
+class VerilogTestbenchExpectedValues : public HLS_step
 {
  protected:
    /// The output directory
@@ -53,8 +53,8 @@ class LegacyTestbenchExpectedValues : public HLS_step
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   LegacyTestbenchExpectedValues(const ParameterConstRef parameters, const HLS_managerRef hls_manager,
-                                 const DesignFlowManagerConstRef design_flow_manager);
+   VerilogTestbenchExpectedValues(const ParameterConstRef parameters, const HLS_managerRef hls_manager,
+                                  const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * When the test vectors carry no expected outputs, write a C driver that calls the top function on every test

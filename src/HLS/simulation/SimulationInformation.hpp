@@ -24,8 +24,8 @@ class SimulationInformation
    /// reference to the simulation tool
    SimulationToolRef sim_tool;
 
-   /// The fields below are used only by the legacy (bambu 2023.1) XML testbench generator
-   /// (--testbench-style=legacy|both).
+   /// The fields below are used only by the self-contained Verilog testbench generator (from bambu 2023.1)
+   /// (--testbench-style=verilog|both).
 
    /// true when the XML test vectors carry expected outputs (param:output,
    /// param:init_output_file or return attributes)

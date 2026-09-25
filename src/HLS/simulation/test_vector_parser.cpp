@@ -271,7 +271,7 @@ TestVectorParser::ParseXMLFile(const std::filesystem::path& input_xml_filename) 
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
                }
-               /// Expected outputs, used only by the legacy testbench generator; the DPI-C
+               /// Expected outputs, used only by the Verilog testbench generator; the DPI-C
                /// testbench looks parameters up by name and ignores these entries
                if((Enode)->get_attribute(param + ":output"))
                {

@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file legacy_minimal_interface_testbench.hpp
- * Ported from bambu 2023.1 (src/HLS/simulation/minimal_interface_testbench.hpp) for --testbench-style=legacy.
+ * @file verilog_minimal_interface_testbench.hpp
+ * Ported from bambu 2023.1 (src/HLS/simulation/minimal_interface_testbench.hpp) for --testbench-style=verilog.
  * @brief Class to compute testbenches for high-level synthesis
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -44,13 +44,13 @@
  *
  */
 
-#ifndef LEGACY_MINIMAL_INTERFACE_TESTBENCH_HPP
-#define LEGACY_MINIMAL_INTERFACE_TESTBENCH_HPP
+#ifndef VERILOG_MINIMAL_INTERFACE_TESTBENCH_HPP
+#define VERILOG_MINIMAL_INTERFACE_TESTBENCH_HPP
 
 /// Superclass include
-#include "legacy_testbench_generation_base_step.hpp"
+#include "verilog_testbench_generation_base_step.hpp"
 
-class LegacyMinimalInterfaceTestbench : public LegacyTestbenchGenerationBaseStep
+class VerilogMinimalInterfaceTestbench : public VerilogTestbenchGenerationBaseStep
 {
  protected:
    std::string memory_aggregate_slices(unsigned int i, unsigned long long bitsize,
@@ -100,12 +100,12 @@ class LegacyMinimalInterfaceTestbench : public LegacyTestbenchGenerationBaseStep
    /**
     * Constructor
     */
-   LegacyMinimalInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _AppM,
-                                   const DesignFlowManagerConstRef design_flow_manager);
+   VerilogMinimalInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _AppM,
+                                    const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
     */
-   ~LegacyMinimalInterfaceTestbench() override;
+   ~VerilogMinimalInterfaceTestbench() override;
 };
 #endif

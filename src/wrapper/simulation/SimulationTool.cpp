@@ -43,11 +43,11 @@
 #include "config_HAVE_ASSERTS.hpp"
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
-#include "LegacyVerilatorWrapper.hpp"
 #include "Parameter.hpp"
 #include "ToolManager.hpp"
 #include "VIVADO_xsim_wrapper.hpp"
 #include "VerilatorWrapper.hpp"
+#include "VerilogVerilatorWrapper.hpp"
 #include "compiler_wrapper.hpp"
 #include "custom_set.hpp"
 #include "fileIO.hpp"
@@ -113,10 +113,10 @@ SimulationToolRef SimulationTool::CreateSimulationTool(type_t type, const Parame
          return SimulationToolRef(new VIVADO_xsim_wrapper(_Param, top_fname, inc_dirs));
          break;
       case VERILATOR:
-         if(_Param->isOption(OPT_testbench_style) && _Param->getOption<std::string>(OPT_testbench_style) == "legacy")
+         if(_Param->isOption(OPT_testbench_style) && _Param->getOption<std::string>(OPT_testbench_style) == "verilog")
          {
             /// self-contained Verilog testbench, no DPI-C co-simulation
-            return SimulationToolRef(new LegacyVerilatorWrapper(_Param, top_fname, inc_dirs));
+            return SimulationToolRef(new VerilogVerilatorWrapper(_Param, top_fname, inc_dirs));
          }
          return SimulationToolRef(new VerilatorWrapper(_Param, top_fname, inc_dirs));
          break;
@@ -365,7 +365,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std
    const auto opt_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
    const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(Param, default_compiler, opt_set));
 
-   const auto extra_compiler_flags = [&]() {
+   const auto extra_compiler_flags = [&]()
+   {
       std::string flags = " -fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing "
                           "-D__builtin_bambu_time_start\\(\\)= -D__builtin_bambu_time_stop\\(\\)= -D__BAMBU_SIM__";
       flags += " -isystem " + relocate_compiler_path(PANDA_DATA_INSTALLDIR) + "/panda/libmdpi/include";
@@ -413,7 +414,8 @@ std::string SimulationTool::GenerateLibraryBuildScript(std::ostream& script, std
            boost::replace_all_copy(Param->getOption<std::string>(OPT_input_file), STR_CST_string_separator, " ") :
            "";
    const auto pp_srcs = Param->isOption(OPT_pretty_print) ? Param->getOption<std::string>(OPT_pretty_print) : "";
-   const auto tb_srcs = [&]() {
+   const auto tb_srcs = [&]()
+   {
       std::string files;
       if(Param->isOption(OPT_testbench_input_file))
       {

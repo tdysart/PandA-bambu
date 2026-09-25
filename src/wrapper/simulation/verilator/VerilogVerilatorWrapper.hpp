@@ -31,20 +31,20 @@
  *
  */
 /**
- * @file LegacyVerilatorWrapper.hpp
- * @brief Verilator simulation of the legacy (bambu 2023.1) self-contained Verilog testbench.
+ * @file VerilogVerilatorWrapper.hpp
+ * @brief Verilator simulation of the self-contained Verilog testbench (bambu 2023.1).
  *
- * The legacy testbench (--testbench-style=legacy) needs neither libmdpi nor a C driver process: the verilated
+ * The Verilog testbench (--testbench-style=verilog) needs neither libmdpi nor a C driver process: the verilated
  * testbench_<top>_tb module is run by the generated testbench_<top>_main.cpp, and results are read back from
  * the 2023.1 results.txt format (one "<status> <cycles>" line per test vector).
  * Ported from bambu 2023.1 (VerilatorWrapper::GenerateScript and SimulationTool::DetermineCycles).
  */
-#ifndef LEGACY_VERILATOR_WRAPPER_HPP
-#define LEGACY_VERILATOR_WRAPPER_HPP
+#ifndef VERILOG_VERILATOR_WRAPPER_HPP
+#define VERILOG_VERILATOR_WRAPPER_HPP
 
 #include "SimulationTool.hpp"
 
-class LegacyVerilatorWrapper : public SimulationTool
+class VerilogVerilatorWrapper : public SimulationTool
 {
    std::string GenerateScript(std::ostream& script, const std::string& top_filename,
                               const std::list<std::string>& file_list) override;
@@ -52,10 +52,10 @@ class LegacyVerilatorWrapper : public SimulationTool
    /**
     * Parse the 2023.1 results.txt format
     */
-   void DetermineLegacyCycles(unsigned long long& accum_cycles, unsigned long long& n_testcases);
+   void DetermineVerilogCycles(unsigned long long& accum_cycles, unsigned long long& n_testcases);
 
  public:
-   LegacyVerilatorWrapper(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
+   VerilogVerilatorWrapper(const ParameterConstRef& Param, const std::string& top_fname, const std::string& inc_dirs);
 
    std::string GenerateSimulationScript(const std::string& top_filename, std::list<std::string> file_list) override;
 

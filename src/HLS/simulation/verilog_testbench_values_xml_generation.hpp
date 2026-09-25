@@ -31,14 +31,14 @@
  *
  */
 /**
- * @file legacy_testbench_values_xml_generation.hpp
- * @brief Write the stimulus/expected-values file (simulation/values.txt) of the legacy testbench from the XML
+ * @file verilog_testbench_values_xml_generation.hpp
+ * @brief Write the stimulus/expected-values file (simulation/values.txt) of the Verilog testbench from the XML
  * test vectors.
  *
  * Ported from bambu 2023.1 (src/HLS/simulation/testbench_values_xml_generation.hpp).
  */
-#ifndef LEGACY_TESTBENCH_VALUES_XML_GENERATION_HPP
-#define LEGACY_TESTBENCH_VALUES_XML_GENERATION_HPP
+#ifndef VERILOG_TESTBENCH_VALUES_XML_GENERATION_HPP
+#define VERILOG_TESTBENCH_VALUES_XML_GENERATION_HPP
 
 #include "hls_step.hpp"
 
@@ -46,7 +46,7 @@
 
 CONSTREF_FORWARD_DECL(tree_manager);
 
-class LegacyTestbenchValuesXMLGeneration : public HLS_step
+class VerilogTestbenchValuesXMLGeneration : public HLS_step
 {
  protected:
    /// The tree manager
@@ -58,8 +58,8 @@ class LegacyTestbenchValuesXMLGeneration : public HLS_step
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   LegacyTestbenchValuesXMLGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager,
-                                      const DesignFlowManagerConstRef design_flow_manager);
+   VerilogTestbenchValuesXMLGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_manager,
+                                       const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Write values.txt: base address, memory initialization, input parameters and expected outputs for every

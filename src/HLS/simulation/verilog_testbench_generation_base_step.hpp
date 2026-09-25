@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file legacy_testbench_generation_base_step.hpp
- * Ported from bambu 2023.1 (src/HLS/simulation/testbench_generation_base_step.hpp) for --testbench-style=legacy.
+ * @file verilog_testbench_generation_base_step.hpp
+ * Ported from bambu 2023.1 (src/HLS/simulation/testbench_generation_base_step.hpp) for --testbench-style=verilog.
  * @brief Class to compute testbenches for high-level synthesis
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -43,8 +43,8 @@
  *
  */
 
-#ifndef LEGACY_TESTBENCH_GENERATION_BASE_STEP_HPP
-#define LEGACY_TESTBENCH_GENERATION_BASE_STEP_HPP
+#ifndef VERILOG_TESTBENCH_GENERATION_BASE_STEP_HPP
+#define VERILOG_TESTBENCH_GENERATION_BASE_STEP_HPP
 
 #include "application_manager.hpp"
 #include "refcount.hpp"
@@ -78,10 +78,10 @@ REF_FORWARD_DECL(language_writer);
 #include <vector>
 
 /**
- * LegacyTestbenchGenerationBaseStep is a Facade class that hide implementation details of the
+ * VerilogTestbenchGenerationBaseStep is a Facade class that hide implementation details of the
  * testbench creation.
  */
-class LegacyTestbenchGenerationBaseStep : public HLS_step
+class VerilogTestbenchGenerationBaseStep : public HLS_step
 {
  protected:
    const language_writerRef writer;
@@ -216,16 +216,16 @@ class LegacyTestbenchGenerationBaseStep : public HLS_step
     * Declared protected to prevent direct instantiation. Use
     * Create() factory methods instead.
     */
-   LegacyTestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                     const DesignFlowManagerConstRef design_flow_manager,
-                                     const HLSFlowStep_Type hls_flow_step_type,
-                                     std::string c_testbench_basename = "values");
+   VerilogTestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                      const DesignFlowManagerConstRef design_flow_manager,
+                                      const HLSFlowStep_Type hls_flow_step_type,
+                                      std::string c_testbench_basename = "values");
 
  public:
    /**
     * Destructor.
     */
-   ~LegacyTestbenchGenerationBaseStep() override;
+   ~VerilogTestbenchGenerationBaseStep() override;
 
    static std::string print_var_init(const tree_managerConstRef TreeM, unsigned int var, const memoryRef mem);
 

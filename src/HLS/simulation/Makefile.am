@@ -49,12 +49,12 @@ noinst_HEADERS = \
    c_initialization_parser_node.hpp \
    CTestbenchExecution.hpp \
    compute_reserved_memory.hpp \
-   legacy_minimal_interface_testbench.hpp \
-   legacy_testbench_expected_values.hpp \
-   legacy_testbench_generation_base_step.hpp \
-   legacy_testbench_memory_allocation.hpp \
-   legacy_testbench_utils.hpp \
-   legacy_testbench_values_xml_generation.hpp \
+   verilog_minimal_interface_testbench.hpp \
+   verilog_testbench_expected_values.hpp \
+   verilog_testbench_generation_base_step.hpp \
+   verilog_testbench_memory_allocation.hpp \
+   verilog_testbench_utils.hpp \
+   verilog_testbench_values_xml_generation.hpp \
    memory_initialization_writer.hpp \
    memory_initialization_writer_base.hpp \
    memory_initialization_c_writer.hpp \
@@ -69,12 +69,12 @@ lib_simulation_la_SOURCES = \
    c_initialization_yparser.ypp \
    CTestbenchExecution.cpp \
    compute_reserved_memory.cpp \
-   legacy_minimal_interface_testbench.cpp \
-   legacy_testbench_expected_values.cpp \
-   legacy_testbench_generation_base_step.cpp \
-   legacy_testbench_memory_allocation.cpp \
-   legacy_testbench_utils.cpp \
-   legacy_testbench_values_xml_generation.cpp \
+   verilog_minimal_interface_testbench.cpp \
+   verilog_testbench_expected_values.cpp \
+   verilog_testbench_generation_base_step.cpp \
+   verilog_testbench_memory_allocation.cpp \
+   verilog_testbench_utils.cpp \
+   verilog_testbench_values_xml_generation.cpp \
    memory_initialization_writer.cpp \
    memory_initialization_writer_base.cpp \
    memory_initialization_c_writer.cpp \

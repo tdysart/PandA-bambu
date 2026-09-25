@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file legacy_testbench_generation_base_step.cpp
- * Ported from bambu 2023.1 (src/HLS/simulation/testbench_generation_base_step.cpp) for --testbench-style=legacy.
+ * @file verilog_testbench_generation_base_step.cpp
+ * Ported from bambu 2023.1 (src/HLS/simulation/testbench_generation_base_step.cpp) for --testbench-style=verilog.
  * @brief hls testbench automatic generation
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -42,7 +42,7 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
  */
-#include "legacy_testbench_generation_base_step.hpp"
+#include "verilog_testbench_generation_base_step.hpp"
 
 #include "config_PACKAGE_BUGREPORT.hpp"
 #include "config_PACKAGE_NAME.hpp"
@@ -61,7 +61,6 @@
 #include "hls_device.hpp"
 #include "hls_manager.hpp"
 #include "language_writer.hpp"
-#include "legacy_testbench_utils.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "structural_manager.hpp"
@@ -72,6 +71,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "utility.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #if HAVE_FROM_DISCREPANCY_BUILT
 #include "Discrepancy.hpp"
@@ -103,7 +103,7 @@ static unsigned long long local_port_size(const structural_objectRef portInst)
    return get_aligned_bitsize(port_bitwidth);
 }
 
-LegacyTestbenchGenerationBaseStep::LegacyTestbenchGenerationBaseStep(
+VerilogTestbenchGenerationBaseStep::VerilogTestbenchGenerationBaseStep(
     const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
     const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
     std::string _c_testbench_basename)
@@ -119,9 +119,9 @@ LegacyTestbenchGenerationBaseStep::LegacyTestbenchGenerationBaseStep(
    std::filesystem::create_directories(output_directory);
 }
 
-LegacyTestbenchGenerationBaseStep::~LegacyTestbenchGenerationBaseStep() = default;
+VerilogTestbenchGenerationBaseStep::~VerilogTestbenchGenerationBaseStep() = default;
 
-HLS_step::HLSRelationships LegacyTestbenchGenerationBaseStep::ComputeHLSRelationships(
+HLS_step::HLSRelationships VerilogTestbenchGenerationBaseStep::ComputeHLSRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {
    HLSRelationships ret;
@@ -131,11 +131,11 @@ HLS_step::HLSRelationships LegacyTestbenchGenerationBaseStep::ComputeHLSRelation
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-         ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION,
+         ret.insert(std::make_tuple(HLSFlowStep_Type::VERILOG_TESTBENCH_MEMORY_ALLOCATION,
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          /// 2023.1 chose between XML-provided expected values and a host execution of the C code
          /// (TESTBENCH_VALUES_C_GENERATION); only the XML source is ported so far
-         ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION,
+         ret.insert(std::make_tuple(HLSFlowStep_Type::VERILOG_TESTBENCH_VALUES_XML_GENERATION,
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
@@ -150,12 +150,12 @@ HLS_step::HLSRelationships LegacyTestbenchGenerationBaseStep::ComputeHLSRelation
    return ret;
 }
 
-bool LegacyTestbenchGenerationBaseStep::HasToBeExecuted() const
+bool VerilogTestbenchGenerationBaseStep::HasToBeExecuted() const
 {
    return true;
 }
 
-void LegacyTestbenchGenerationBaseStep::Initialize()
+void VerilogTestbenchGenerationBaseStep::Initialize()
 {
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
@@ -168,7 +168,7 @@ void LegacyTestbenchGenerationBaseStep::Initialize()
    hdl_testbench_basename = "testbench_" + cir->get_id();
 }
 
-DesignFlowStep_Status LegacyTestbenchGenerationBaseStep::Exec()
+DesignFlowStep_Status VerilogTestbenchGenerationBaseStep::Exec()
 {
    HLSMgr->RSim->filename_bench = (parameters->getOption<std::string>(OPT_simulator) == "VERILATOR") ?
                                       verilator_testbench() :
@@ -176,19 +176,19 @@ DesignFlowStep_Status LegacyTestbenchGenerationBaseStep::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-std::string LegacyTestbenchGenerationBaseStep::print_var_init(const tree_managerConstRef TM, unsigned int var,
-                                                              const memoryRef mem)
+std::string VerilogTestbenchGenerationBaseStep::print_var_init(const tree_managerConstRef TM, unsigned int var,
+                                                               const memoryRef mem)
 {
-   return LegacyPrintVarInit(TM, var, mem);
+   return VerilogPrintVarInit(TM, var, mem);
 }
 
-std::string LegacyTestbenchGenerationBaseStep::verilator_testbench() const
+std::string VerilogTestbenchGenerationBaseStep::verilator_testbench() const
 {
    if(!parameters->getOption<bool>(OPT_generate_testbench))
    {
       return "";
    }
-   std::string simulation_values_path = output_directory + STR(STR_CST_legacy_testbench_values_basename) + ".txt";
+   std::string simulation_values_path = output_directory + STR(STR_CST_verilog_testbench_values_basename) + ".txt";
 
    PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbench");
 
@@ -204,7 +204,7 @@ std::string LegacyTestbenchGenerationBaseStep::verilator_testbench() const
    return fileName;
 }
 
-std::string LegacyTestbenchGenerationBaseStep::write_verilator_testbench(const std::string& input_file) const
+std::string VerilogTestbenchGenerationBaseStep::write_verilator_testbench(const std::string& input_file) const
 {
    // Generate the testbench
 
@@ -293,7 +293,7 @@ std::string LegacyTestbenchGenerationBaseStep::write_verilator_testbench(const s
    return fileName;
 }
 
-std::string LegacyTestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) const
+std::string VerilogTestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) const
 {
    if(!parameters->getOption<bool>(OPT_generate_testbench))
    {
@@ -302,7 +302,7 @@ std::string LegacyTestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating HDL testbench");
    const tree_managerRef TM = HLSMgr->get_tree_manager();
 
-   std::string simulation_values_path = output_directory + STR(STR_CST_legacy_testbench_values_basename) + ".txt";
+   std::string simulation_values_path = output_directory + STR(STR_CST_verilog_testbench_values_basename) + ".txt";
    bool generate_vcd_output =
        (parameters->isOption(OPT_generate_vcd) and parameters->getOption<bool>(OPT_generate_vcd)) or
        (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy));
@@ -320,9 +320,9 @@ std::string LegacyTestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_
    return file_name;
 }
 
-void LegacyTestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_values_path,
-                                                            bool generate_vcd_output, bool xilinx_isim,
-                                                            const tree_managerConstRef TM) const
+void VerilogTestbenchGenerationBaseStep::write_hdl_testbench(std::string simulation_values_path,
+                                                             bool generate_vcd_output, bool xilinx_isim,
+                                                             const tree_managerConstRef TM) const
 {
    this->write_underlying_testbench(simulation_values_path, generate_vcd_output, xilinx_isim, TM);
 
@@ -338,9 +338,9 @@ void LegacyTestbenchGenerationBaseStep::write_hdl_testbench(std::string simulati
    writer->write("endmodule\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path, bool withMemory,
-                                                            const tree_managerConstRef TM,
-                                                            bool generate_vcd_output) const
+void VerilogTestbenchGenerationBaseStep::write_initial_block(const std::string& simulation_values_path, bool withMemory,
+                                                             const tree_managerConstRef TM,
+                                                             bool generate_vcd_output) const
 {
    begin_initial_block();
 
@@ -408,7 +408,7 @@ void LegacyTestbenchGenerationBaseStep::write_initial_block(const std::string& s
    end_initial_block();
 }
 
-void LegacyTestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
+void VerilogTestbenchGenerationBaseStep::init_extra_signals(bool withMemory) const
 {
    if(mod->find_member(RETURN_PORT_NAME, port_o_K, cir))
    {
@@ -429,7 +429,7 @@ void LegacyTestbenchGenerationBaseStep::init_extra_signals(bool withMemory) cons
    }
 }
 
-void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TM) const
+void VerilogTestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef TM) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing output checks");
    const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
@@ -749,7 +749,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             }
             else
             {
-               auto pt_type = LegacyPointedType(HLSMgr, parameters, unmangled_name);
+               auto pt_type = VerilogPointedType(HLSMgr, parameters, unmangled_name);
                if(tree_helper::IsArrayEquivType(pt_type))
                {
                   pt_type = tree_helper::CGetArrayBaseType(pt_type);
@@ -1435,7 +1435,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             }
             else
             {
-               const auto pt_type = LegacyPointedType(HLSMgr, parameters, var);
+               const auto pt_type = VerilogPointedType(HLSMgr, parameters, var);
                bitsize = tree_helper::Size(pt_type);
                is_real = tree_helper::IsRealType(pt_type);
             }
@@ -1790,9 +1790,9 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written output checks");
 }
 
-void LegacyTestbenchGenerationBaseStep::write_underlying_testbench(const std::string simulation_values_path,
-                                                                   bool generate_vcd_output, bool xilinx_isim,
-                                                                   const tree_managerConstRef TM) const
+void VerilogTestbenchGenerationBaseStep::write_underlying_testbench(const std::string simulation_values_path,
+                                                                    bool generate_vcd_output, bool xilinx_isim,
+                                                                    const tree_managerConstRef TM) const
 {
    if(mod->get_in_out_port_size())
    {
@@ -1826,14 +1826,14 @@ void LegacyTestbenchGenerationBaseStep::write_underlying_testbench(const std::st
    write_module_end();
 }
 
-void LegacyTestbenchGenerationBaseStep::write_clock_process() const
+void VerilogTestbenchGenerationBaseStep::write_clock_process() const
 {
    /// write clock switching operation
    writer->write_comment("Clock switching: 1 cycle every CLOCK_PERIOD seconds\n");
    writer->write("always # `HALF_CLOCK_PERIOD clock = !clock;\n\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
+void VerilogTestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
 {
    if(parameters->getOption<std::string>(OPT_simulator) == "VERILATOR")
    {
@@ -1899,14 +1899,14 @@ void LegacyTestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
    writer->write("`define MEM_DELAY_WRITE " + parameters->getOption<std::string>(OPT_mem_delay_write) + "\n\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::write_module_begin() const
+void VerilogTestbenchGenerationBaseStep::write_module_begin() const
 {
    writer->write_comment("MODULE DECLARATION\n");
    writer->write("module " + mod->get_id() + "_tb(" + STR(CLOCK_PORT_NAME) + ");\n");
    writer->write(STR(STD_OPENING_CHAR));
 }
 
-void LegacyTestbenchGenerationBaseStep::write_module_end() const
+void VerilogTestbenchGenerationBaseStep::write_module_end() const
 {
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("endmodule\n\n");
@@ -1917,7 +1917,7 @@ void LegacyTestbenchGenerationBaseStep::write_module_end() const
    }
 }
 
-void LegacyTestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) const
+void VerilogTestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) const
 {
    const auto target_language = static_cast<HDLWriter_Language>(parameters->getOption<int>(OPT_writer_language));
    const auto target_writer = target_language == HDLWriter_Language::VERILOG ?
@@ -1990,7 +1990,7 @@ void LegacyTestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_i
    }
 }
 
-void LegacyTestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
+void VerilogTestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
    const auto testbench_memsize = [&]()
    {
@@ -2168,7 +2168,7 @@ void LegacyTestbenchGenerationBaseStep::write_auxiliary_signal_declaration() con
    writer->write("integer currTime;\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::begin_initial_block() const
+void VerilogTestbenchGenerationBaseStep::begin_initial_block() const
 {
    writer->write("\n");
    writer->write_comment("Operation to be executed just one time\n");
@@ -2177,13 +2177,13 @@ void LegacyTestbenchGenerationBaseStep::begin_initial_block() const
    writer->write("begin\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::end_initial_block() const
+void VerilogTestbenchGenerationBaseStep::end_initial_block() const
 {
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::open_value_file(const std::string& input_values_filename) const
+void VerilogTestbenchGenerationBaseStep::open_value_file(const std::string& input_values_filename) const
 {
    writer->write_comment("OPEN FILE WITH VALUES FOR SIMULATION\n");
    writer->write("file = $fopen(\"" + input_values_filename + "\",\"r\");\n");
@@ -2201,7 +2201,7 @@ void LegacyTestbenchGenerationBaseStep::open_value_file(const std::string& input
 
 /// The testbench never closes values.txt or results.txt (2023.1 did before every $finish): Verilator completes the
 /// time step after $finish, and a block reading or writing a closed file then crashes. results.txt is flushed.
-void LegacyTestbenchGenerationBaseStep::open_result_file(const std::string& result_file) const
+void VerilogTestbenchGenerationBaseStep::open_result_file(const std::string& result_file) const
 {
    writer->write_comment("OPEN FILE WHERE results will be written\n");
    writer->write("res_file = $fopen(\"" + result_file + "\",\"w\");\n\n");
@@ -2217,7 +2217,7 @@ void LegacyTestbenchGenerationBaseStep::open_result_file(const std::string& resu
    writer->write("end\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::initialize_auxiliary_variables() const
+void VerilogTestbenchGenerationBaseStep::initialize_auxiliary_variables() const
 {
    writer->write_comment("Variables initialization\n");
    writer->write("sim_time = 0;\n");
@@ -2237,7 +2237,7 @@ void LegacyTestbenchGenerationBaseStep::initialize_auxiliary_variables() const
    writer->write("success = 1;\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::initialize_input_signals(const tree_managerConstRef TM) const
+void VerilogTestbenchGenerationBaseStep::initialize_input_signals(const tree_managerConstRef TM) const
 {
    for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
    {
@@ -2299,7 +2299,7 @@ void LegacyTestbenchGenerationBaseStep::initialize_input_signals(const tree_mana
    writer->write("\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::testbench_controller_machine() const
+void VerilogTestbenchGenerationBaseStep::testbench_controller_machine() const
 {
    writer->write("always @(*)\n");
    writer->write("  begin\n");
@@ -2652,7 +2652,7 @@ void LegacyTestbenchGenerationBaseStep::testbench_controller_machine() const
    }
 }
 
-void LegacyTestbenchGenerationBaseStep::memory_initialization() const
+void VerilogTestbenchGenerationBaseStep::memory_initialization() const
 {
    writer->write("for (addr = 0; addr < MEMSIZE; addr = addr + 1)\n");
    writer->write(STR(STD_OPENING_CHAR));
@@ -2662,7 +2662,7 @@ void LegacyTestbenchGenerationBaseStep::memory_initialization() const
    writer->write("end\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::write_max_simulation_time_control() const
+void VerilogTestbenchGenerationBaseStep::write_max_simulation_time_control() const
 {
    writer->write("always @(posedge " CLOCK_PORT_NAME ")\n");
    writer->write(STR(STD_OPENING_CHAR));
@@ -2687,7 +2687,7 @@ void LegacyTestbenchGenerationBaseStep::write_max_simulation_time_control() cons
    writer->write("end\n\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::reading_base_memory_address_from_file() const
+void VerilogTestbenchGenerationBaseStep::reading_base_memory_address_from_file() const
 {
    writer->write_comment(
        "reading base address memory --------------------------------------------------------------\n");
@@ -2724,7 +2724,7 @@ void LegacyTestbenchGenerationBaseStep::reading_base_memory_address_from_file() 
    writer->write("end\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::memory_initialization_from_file() const
+void VerilogTestbenchGenerationBaseStep::memory_initialization_from_file() const
 {
    writer->write_comment("initializing memory --------------------------------------------------------------\n");
    writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\" || _ch_ == \"m\")\n");
@@ -2753,7 +2753,7 @@ void LegacyTestbenchGenerationBaseStep::memory_initialization_from_file() const
    writer->write("end\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::begin_file_reading_operation() const
+void VerilogTestbenchGenerationBaseStep::begin_file_reading_operation() const
 {
    writer->write("\n");
 
@@ -2766,7 +2766,7 @@ void LegacyTestbenchGenerationBaseStep::begin_file_reading_operation() const
    writer->write("begin\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::end_file_reading_operation() const
+void VerilogTestbenchGenerationBaseStep::end_file_reading_operation() const
 {
    writer->write_comment("Simulation start\n");
    writer->write(
@@ -2777,7 +2777,7 @@ void LegacyTestbenchGenerationBaseStep::end_file_reading_operation() const
    writer->write("end\n\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::write_sim_time_calc() const
+void VerilogTestbenchGenerationBaseStep::write_sim_time_calc() const
 {
    writer->write_comment("Check done_port signal\n");
    writer->write("always @(negedge " CLOCK_PORT_NAME ")\n");
@@ -2800,8 +2800,8 @@ void LegacyTestbenchGenerationBaseStep::write_sim_time_calc() const
    writer->write("end\n");
 }
 
-void LegacyTestbenchGenerationBaseStep::read_input_value_from_file(const std::string& input_name,
-                                                                   bool& first_valid_input) const
+void VerilogTestbenchGenerationBaseStep::read_input_value_from_file(const std::string& input_name,
+                                                                    bool& first_valid_input) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {
@@ -2912,7 +2912,7 @@ void LegacyTestbenchGenerationBaseStep::read_input_value_from_file(const std::st
    }
 }
 
-void LegacyTestbenchGenerationBaseStep::write_compute_ulps_functions() const
+void VerilogTestbenchGenerationBaseStep::write_compute_ulps_functions() const
 {
    writer->write("\n");
    writer->write("function real bits32_to_real64;\n");

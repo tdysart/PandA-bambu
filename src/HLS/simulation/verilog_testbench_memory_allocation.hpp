@@ -31,24 +31,24 @@
  *
  */
 /**
- * @file legacy_testbench_memory_allocation.hpp
- * @brief Reserve memory for the pointer arguments of the top function in the legacy (XML) testbench.
+ * @file verilog_testbench_memory_allocation.hpp
+ * @brief Reserve memory for the pointer arguments of the top function in the self-contained Verilog (XML) testbench.
  *
  * Ported from bambu 2023.1 (src/HLS/simulation/testbench_memory_allocation.hpp).
  */
-#ifndef LEGACY_TESTBENCH_MEMORY_ALLOCATION_HPP
-#define LEGACY_TESTBENCH_MEMORY_ALLOCATION_HPP
+#ifndef VERILOG_TESTBENCH_MEMORY_ALLOCATION_HPP
+#define VERILOG_TESTBENCH_MEMORY_ALLOCATION_HPP
 
 #include "hls_step.hpp"
 
-class LegacyTestbenchMemoryAllocation : public HLS_step
+class VerilogTestbenchMemoryAllocation : public HLS_step
 {
  private:
    HLSRelationships ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   LegacyTestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
-                                   const DesignFlowManagerConstRef _design_flow_manager);
+   VerilogTestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr,
+                                    const DesignFlowManagerConstRef _design_flow_manager);
 
    /**
     * For every test vector, reserve space in the design memory map for the objects pointed to by the top

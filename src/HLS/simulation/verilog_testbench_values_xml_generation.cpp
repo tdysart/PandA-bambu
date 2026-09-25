@@ -31,13 +31,13 @@
  *
  */
 /**
- * @file legacy_testbench_values_xml_generation.cpp
- * @brief Write the stimulus/expected-values file (simulation/values.txt) of the legacy testbench from the XML
+ * @file verilog_testbench_values_xml_generation.cpp
+ * @brief Write the stimulus/expected-values file (simulation/values.txt) of the Verilog testbench from the XML
  * test vectors.
  *
  * Ported from bambu 2023.1 (src/HLS/simulation/testbench_values_xml_generation.cpp).
  */
-#include "legacy_testbench_values_xml_generation.hpp"
+#include "verilog_testbench_values_xml_generation.hpp"
 
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
@@ -47,7 +47,6 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
-#include "legacy_testbench_utils.hpp"
 #include "memory.hpp"
 #include "memory_initialization_writer.hpp"
 #include "string_manipulation.hpp"
@@ -56,6 +55,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "utility.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -64,18 +64,18 @@
 #include <tuple>
 #include <vector>
 
-LegacyTestbenchValuesXMLGeneration::LegacyTestbenchValuesXMLGeneration(
+VerilogTestbenchValuesXMLGeneration::VerilogTestbenchValuesXMLGeneration(
     const ParameterConstRef _parameters, const HLS_managerRef _hls_manager,
     const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _hls_manager, _design_flow_manager,
-               HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION),
+               HLSFlowStep_Type::VERILOG_TESTBENCH_VALUES_XML_GENERATION),
       TM(_hls_manager->get_tree_manager()),
       output_directory(parameters->getOption<std::filesystem::path>(OPT_output_directory) / "simulation")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-HLS_step::HLSRelationships LegacyTestbenchValuesXMLGeneration::ComputeHLSRelationships(
+HLS_step::HLSRelationships VerilogTestbenchValuesXMLGeneration::ComputeHLSRelationships(
     const DesignFlowStep::RelationshipType relationship_type) const
 {
    HLSRelationships ret;
@@ -86,10 +86,10 @@ HLS_step::HLSRelationships LegacyTestbenchValuesXMLGeneration::ComputeHLSRelatio
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
          /// fills in the expected outputs when the test vectors have none
-         ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_EXPECTED_VALUES,
+         ret.insert(std::make_tuple(HLSFlowStep_Type::VERILOG_TESTBENCH_EXPECTED_VALUES,
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          /// param_mem_size/param_next_off/param_address are computed there
-         ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION,
+         ret.insert(std::make_tuple(HLSFlowStep_Type::VERILOG_TESTBENCH_MEMORY_ALLOCATION,
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }
@@ -107,12 +107,12 @@ HLS_step::HLSRelationships LegacyTestbenchValuesXMLGeneration::ComputeHLSRelatio
    return ret;
 }
 
-bool LegacyTestbenchValuesXMLGeneration::HasToBeExecuted() const
+bool VerilogTestbenchValuesXMLGeneration::HasToBeExecuted() const
 {
    return true;
 }
 
-DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
+DesignFlowStep_Status VerilogTestbenchValuesXMLGeneration::Exec()
 {
    const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
    THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
@@ -121,11 +121,11 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
    const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    if(!HLSMgr->RSim->results_available)
    {
-      THROW_ERROR("The legacy testbench has no expected outputs: neither the XML test vectors (param:output, "
+      THROW_ERROR("The Verilog testbench has no expected outputs: neither the XML test vectors (param:output, "
                   "param:init_output_file or return attributes) nor the host execution provided them");
    }
    std::filesystem::create_directories(output_directory);
-   const auto output_file_name = output_directory / (STR_CST_legacy_testbench_values_basename ".txt");
+   const auto output_file_name = output_directory / (STR_CST_verilog_testbench_values_basename ".txt");
    std::ofstream output_stream(output_file_name, std::ios::out);
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
 
@@ -215,7 +215,7 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
          if(mem_vars.find(l) != mem_vars.end() && !is_interface)
          {
             is_memory = true;
-            test_v = LegacyPrintVarInit(TM, l, HLSMgr->Rmem);
+            test_v = VerilogPrintVarInit(TM, l, HLSMgr->Rmem);
          }
          /// Parameter: read initialization from parsed xml
          else if(curr_test_vector.find(param) != curr_test_vector.end())
@@ -260,7 +260,7 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
                 CInitializationParserFunctorRef(new MemoryInitializationWriter(
                     output_stream, TM, behavioral_helper, reserved_mem_bytes, TM->GetTreeNode(l),
                     TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION, parameters,
-                    LegacyTypedPointerType(HLSMgr, parameters, l)));
+                    VerilogTypedPointerType(HLSMgr, parameters, l)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Parsing initialization of " + param + "(" +
                                tree_helper::CGetType(TM->GetTreeNode(l))->get_kind_text() + "): " + test_v);
@@ -325,7 +325,7 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
             const CInitializationParserFunctorRef c_initialization_parser_functor(new MemoryInitializationWriter(
                 output_stream, TM, behavioral_helper, all_reserved_mem_bytes.at(v_idx).at(function_parameter->index),
                 function_parameter, TestbenchGeneration_MemoryType::OUTPUT_PARAMETER, parameters,
-                LegacyTypedPointerType(HLSMgr, parameters, function_parameter->index)));
+                VerilogTypedPointerType(HLSMgr, parameters, function_parameter->index)));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Parsing expected output for " + param + ": " + expected_values);
             c_initialization_parser->Parse(c_initialization_parser_functor, expected_values);

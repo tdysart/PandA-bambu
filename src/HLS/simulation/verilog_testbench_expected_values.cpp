@@ -31,11 +31,11 @@
  *
  */
 /**
- * @file legacy_testbench_expected_values.cpp
- * @brief Compute the expected outputs of the legacy (bambu 2023.1, XML-driven) testbench by executing the
- * specification on the host.
+ * @file verilog_testbench_expected_values.cpp
+ * @brief Compute the expected outputs of the self-contained Verilog (bambu 2023.1, XML-driven) testbench by executing
+ * the specification on the host.
  */
-#include "legacy_testbench_expected_values.hpp"
+#include "verilog_testbench_expected_values.hpp"
 
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
@@ -46,12 +46,12 @@
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
-#include "legacy_testbench_utils.hpp"
 #include "string_manipulation.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "utility.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -61,17 +61,17 @@
 #include <tuple>
 #include <vector>
 
-LegacyTestbenchExpectedValues::LegacyTestbenchExpectedValues(const ParameterConstRef _parameters,
-                                                             const HLS_managerRef _hls_manager,
-                                                             const DesignFlowManagerConstRef _design_flow_manager)
-    : HLS_step(_parameters, _hls_manager, _design_flow_manager, HLSFlowStep_Type::LEGACY_TESTBENCH_EXPECTED_VALUES),
+VerilogTestbenchExpectedValues::VerilogTestbenchExpectedValues(const ParameterConstRef _parameters,
+                                                               const HLS_managerRef _hls_manager,
+                                                               const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _hls_manager, _design_flow_manager, HLSFlowStep_Type::VERILOG_TESTBENCH_EXPECTED_VALUES),
       output_directory(parameters->getOption<std::filesystem::path>(OPT_output_directory) / "simulation")
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 HLS_step::HLSRelationships
-LegacyTestbenchExpectedValues::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+VerilogTestbenchExpectedValues::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    HLSRelationships ret;
    switch(relationship_type)
@@ -96,7 +96,7 @@ LegacyTestbenchExpectedValues::ComputeHLSRelationships(const DesignFlowStep::Rel
    return ret;
 }
 
-bool LegacyTestbenchExpectedValues::HasToBeExecuted() const
+bool VerilogTestbenchExpectedValues::HasToBeExecuted() const
 {
    return true;
 }
@@ -110,20 +110,20 @@ static std::string PrintValueStatement(const tree_nodeConstRef& type, const std:
       const auto bits = tree_helper::Size(type);
       if(bits != 32 && bits != 64)
       {
-         THROW_ERROR("Legacy testbench: " + STR(bits) + "-bit floating point type of " + param +
+         THROW_ERROR("Verilog testbench: " + STR(bits) + "-bit floating point type of " + param +
                      " is not supported by the host execution");
       }
-      return "__legacy_print_real((double)(" + value + "), " + (bits == 32 ? "1" : "0") + ");";
+      return "__verilog_tb_print_real((double)(" + value + "), " + (bits == 32 ? "1" : "0") + ");";
    }
    if(tree_helper::IsBooleanType(type) || tree_helper::IsUnsignedIntegerType(type))
    {
-      return "fprintf(__legacy_out, \"%llu\", (unsigned long long)(" + value + "));";
+      return "fprintf(__verilog_tb_out, \"%llu\", (unsigned long long)(" + value + "));";
    }
    if(tree_helper::IsSignedIntegerType(type))
    {
-      return "fprintf(__legacy_out, \"%lld\", (long long)(" + value + "));";
+      return "fprintf(__verilog_tb_out, \"%lld\", (long long)(" + value + "));";
    }
-   THROW_ERROR("Legacy testbench: the type of " + param + " is not supported by the host execution");
+   THROW_ERROR("Verilog testbench: the type of " + param + " is not supported by the host execution");
    return "";
 }
 
@@ -134,7 +134,7 @@ static std::string FlatInitializer(std::string value)
    return "{" + value + "}";
 }
 
-DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
+DesignFlowStep_Status VerilogTestbenchExpectedValues::Exec()
 {
    if(HLSMgr->RSim->results_available)
    {
@@ -144,7 +144,7 @@ DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
    const auto input_format = parameters->getOption<Parameters_FileFormat>(OPT_input_format);
    if(input_format == Parameters_FileFormat::FF_CPP || input_format == Parameters_FileFormat::FF_LLVM_CPP)
    {
-      THROW_ERROR("The legacy testbench cannot compute expected outputs for C++ input yet: add them to the XML "
+      THROW_ERROR("The Verilog testbench cannot compute expected outputs for C++ input yet: add them to the XML "
                   "test vectors (param:output, param:init_output_file or return attributes)");
    }
    const auto TM = HLSMgr->get_tree_manager();
@@ -157,30 +157,30 @@ DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
    const auto return_type = tree_helper::GetFunctionReturnType(fnode);
 
    std::filesystem::create_directories(output_directory);
-   const auto driver_filename = output_directory / "legacy_expected_values.c";
-   const auto exec_filename = output_directory / "legacy_expected_values";
-   const auto results_filename = output_directory / "legacy_expected_values.txt";
+   const auto driver_filename = output_directory / "verilog_expected_values.c";
+   const auto exec_filename = output_directory / "verilog_expected_values";
+   const auto results_filename = output_directory / "verilog_expected_values.txt";
 
    /// Driver: prototype of the top function from the original C types of its parameters
    std::ofstream driver(driver_filename);
-   driver << "/* Computes the expected outputs of the legacy testbench; generated by bambu */\n"
+   driver << "/* Computes the expected outputs of the Verilog testbench; generated by bambu */\n"
           << "#include <math.h>\n#include <stdbool.h>\n#include <stddef.h>\n#include <stdint.h>\n"
           << "#include <stdio.h>\n\n"
-          << "static FILE* __legacy_out;\n\n"
-          << "static void __legacy_print_real(double v, int is_float)\n{\n"
-          << "   if(isnan(v))\n      fputs(signbit(v) ? \"-NaN\" : \"+NaN\", __legacy_out);\n"
-          << "   else if(isinf(v))\n      fputs(v < 0 ? \"-Inf\" : \"+Inf\", __legacy_out);\n"
-          << "   else\n      fprintf(__legacy_out, is_float ? \"%.9g\" : \"%.17g\", v);\n}\n\n";
+          << "static FILE* __verilog_tb_out;\n\n"
+          << "static void __verilog_tb_print_real(double v, int is_float)\n{\n"
+          << "   if(isnan(v))\n      fputs(signbit(v) ? \"-NaN\" : \"+NaN\", __verilog_tb_out);\n"
+          << "   else if(isinf(v))\n      fputs(v < 0 ? \"-Inf\" : \"+Inf\", __verilog_tb_out);\n"
+          << "   else\n      fprintf(__verilog_tb_out, is_float ? \"%.9g\" : \"%.17g\", v);\n}\n\n";
    driver << (return_type ? tree_helper::PrintType(TM, return_type) : std::string("void")) << " " << top_fname << "(";
    std::vector<std::string> param_names;
    for(const auto& function_parameter : function_parameters)
    {
       const auto param = BH->PrintVariable(function_parameter->index);
-      driver << (param_names.empty() ? "" : ", ") << LegacyOriginalTypename(HLSMgr, parameters, param);
+      driver << (param_names.empty() ? "" : ", ") << VerilogOriginalTypename(HLSMgr, parameters, param);
       param_names.push_back(param);
    }
    driver << ");\n\nint main(int argc, char** argv)\n{\n"
-          << "   if(argc != 2 || !(__legacy_out = fopen(argv[1], \"w\")))\n      return 1;\n";
+          << "   if(argc != 2 || !(__verilog_tb_out = fopen(argv[1], \"w\")))\n      return 1;\n";
 
    unsigned int v_idx = 0;
    for(const auto& test_vector : HLSMgr->RSim->test_vectors)
@@ -192,30 +192,30 @@ DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
       {
          const auto& function_parameter = function_parameters.at(p);
          const auto& param = param_names.at(p);
-         const auto var = "__legacy_p" + STR(p);
-         const auto type_name = LegacyOriginalTypename(HLSMgr, parameters, param);
+         const auto var = "__verilog_tb_p" + STR(p);
+         const auto type_name = VerilogOriginalTypename(HLSMgr, parameters, param);
          if(!test_vector.count(param))
          {
-            THROW_ERROR("Legacy testbench: parameter " + param + " has no value in test vector " + STR(v_idx) +
+            THROW_ERROR("Verilog testbench: parameter " + param + " has no value in test vector " + STR(v_idx) +
                         ", so its expected output cannot be computed");
          }
          const auto& value = test_vector.at(param);
          if(ends_with(value, ".dat"))
          {
-            THROW_ERROR("Legacy testbench: binary initialization files (" + value +
+            THROW_ERROR("Verilog testbench: binary initialization files (" + value +
                         ") are not supported by the host execution");
          }
          call_args += (call_args.empty() ? "" : ", ") + var;
          if(tree_helper::IsPointerType(function_parameter))
          {
-            driver << "      " << LegacyBaseTypename(type_name) << " " << var << "[] = " << FlatInitializer(value)
+            driver << "      " << VerilogBaseTypename(type_name) << " " << var << "[] = " << FlatInitializer(value)
                    << ";\n";
-            const auto elem_type = LegacyPointedType(HLSMgr, parameters, function_parameter->index);
-            print_outputs += "      fputs(\"" + param + " {\", __legacy_out);\n" +
+            const auto elem_type = VerilogPointedType(HLSMgr, parameters, function_parameter->index);
+            print_outputs += "      fputs(\"" + param + " {\", __verilog_tb_out);\n" +
                              "      for(size_t i = 0; i < sizeof(" + var + ") / sizeof(" + var + "[0]); ++i)\n" +
-                             "      {\n         if(i)\n            fputc(',', __legacy_out);\n         " +
+                             "      {\n         if(i)\n            fputc(',', __verilog_tb_out);\n         " +
                              PrintValueStatement(elem_type, var + "[i]", param) + "\n      }\n" +
-                             "      fputs(\"}\\n\", __legacy_out);\n";
+                             "      fputs(\"}\\n\", __verilog_tb_out);\n";
          }
          else
          {
@@ -224,20 +224,20 @@ DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
       }
       if(return_type)
       {
-         driver << "      " << tree_helper::PrintType(TM, return_type) << " __legacy_ret = " << top_fname << "("
+         driver << "      " << tree_helper::PrintType(TM, return_type) << " __verilog_tb_ret = " << top_fname << "("
                 << call_args << ");\n";
-         print_outputs += "      fputs(\"return \", __legacy_out);\n      " +
-                          PrintValueStatement(return_type, "__legacy_ret", "the return value") +
-                          "\n      fputc('\\n', __legacy_out);\n";
+         print_outputs += "      fputs(\"return \", __verilog_tb_out);\n      " +
+                          PrintValueStatement(return_type, "__verilog_tb_ret", "the return value") +
+                          "\n      fputc('\\n', __verilog_tb_out);\n";
       }
       else
       {
          driver << "      " << top_fname << "(" << call_args << ");\n";
       }
-      driver << "      fputs(\"vector " << v_idx << "\\n\", __legacy_out);\n" << print_outputs << "   }\n";
+      driver << "      fputs(\"vector " << v_idx << "\\n\", __verilog_tb_out);\n" << print_outputs << "   }\n";
       ++v_idx;
    }
-   driver << "   fclose(__legacy_out);\n   return 0;\n}\n";
+   driver << "   fclose(__verilog_tb_out);\n   return 0;\n}\n";
    driver.close();
 
    /// Build the driver with the specification
@@ -260,11 +260,11 @@ DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Computing the expected outputs on the host");
    compiler_wrapper->CreateExecutable(sources, exec_filename.string(), compiler_flags);
    const auto ret = PandaSystem(parameters, exec_filename.string() + " " + results_filename.string(), false,
-                                output_directory / "legacy_expected_values.log");
+                                output_directory / "verilog_expected_values.log");
    if(IsError(ret))
    {
-      THROW_ERROR("Error executing the specification to compute the expected outputs of the legacy testbench (see " +
-                  (output_directory / "legacy_expected_values.log").string() + ")");
+      THROW_ERROR("Error executing the specification to compute the expected outputs of the Verilog testbench (see " +
+                  (output_directory / "verilog_expected_values.log").string() + ")");
    }
 
    /// Store the results in the test vectors
@@ -298,7 +298,7 @@ DesignFlowStep_Status LegacyTestbenchExpectedValues::Exec()
    }
    HLSMgr->RSim->results_available = true;
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
-                  "---Legacy testbench: expected outputs computed by executing the specification on the host");
+                  "---Verilog testbench: expected outputs computed by executing the specification on the host");
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "<--Computed the expected outputs on the host");
    return DesignFlowStep_Status::SUCCESS;
 }

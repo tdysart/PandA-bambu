@@ -31,8 +31,8 @@
  *
  */
 /**
- * @file legacy_minimal_interface_testbench.cpp
- * Ported from bambu 2023.1 (src/HLS/simulation/minimal_interface_testbench.cpp) for --testbench-style=legacy.
+ * @file verilog_minimal_interface_testbench.cpp
+ * Ported from bambu 2023.1 (src/HLS/simulation/minimal_interface_testbench.cpp) for --testbench-style=verilog.
  * @brief Class to compute testbenches for high-level synthesis
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -43,9 +43,9 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  *
  */
-#include "legacy_minimal_interface_testbench.hpp"
+#include "verilog_minimal_interface_testbench.hpp"
 
-#include "legacy_testbench_utils.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #include "HDL_manager.hpp"
 #include "Parameter.hpp"
@@ -78,20 +78,21 @@ static unsigned long long local_port_size(const structural_objectRef portInst)
    return get_aligned_bitsize(port_bitwidth);
 }
 
-LegacyMinimalInterfaceTestbench::LegacyMinimalInterfaceTestbench(const ParameterConstRef _parameters,
-                                                                 const HLS_managerRef _AppM,
-                                                                 const DesignFlowManagerConstRef _design_flow_manager)
-    : LegacyTestbenchGenerationBaseStep(_parameters, _AppM, _design_flow_manager,
-                                        HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION)
+VerilogMinimalInterfaceTestbench::VerilogMinimalInterfaceTestbench(const ParameterConstRef _parameters,
+                                                                   const HLS_managerRef _AppM,
+                                                                   const DesignFlowManagerConstRef _design_flow_manager)
+    : VerilogTestbenchGenerationBaseStep(_parameters, _AppM, _design_flow_manager,
+                                         HLSFlowStep_Type::VERILOG_TESTBENCH_GENERATION)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-LegacyMinimalInterfaceTestbench::~LegacyMinimalInterfaceTestbench() = default;
+VerilogMinimalInterfaceTestbench::~VerilogMinimalInterfaceTestbench() = default;
 
-void LegacyMinimalInterfaceTestbench::cond_load(unsigned long long Mout_addr_ram_bitsize, const std::string& post_slice,
-                                                const std::string& res_string, unsigned int i,
-                                                const std::string& in_else, const std::string& mem_aggregate) const
+void VerilogMinimalInterfaceTestbench::cond_load(unsigned long long Mout_addr_ram_bitsize,
+                                                 const std::string& post_slice, const std::string& res_string,
+                                                 unsigned int i, const std::string& in_else,
+                                                 const std::string& mem_aggregate) const
 {
    writer->write("assign " + res_string + post_slice + " = ((base_addr <= Mout_addr_ram[" +
                  STR((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + STR(i * Mout_addr_ram_bitsize) +
@@ -100,11 +101,12 @@ void LegacyMinimalInterfaceTestbench::cond_load(unsigned long long Mout_addr_ram
                  in_else + ";\n");
 }
 
-void LegacyMinimalInterfaceTestbench::cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize,
-                                                           unsigned int Mout_addr_ram_n_ports, std::string queue_type,
-                                                           const std::string& post_slice, const std::string& res_string,
-                                                           unsigned int i, const std::string& in_else,
-                                                           const std::string& mem_aggregate) const
+void VerilogMinimalInterfaceTestbench::cond_load_from_queue(unsigned long long Mout_addr_ram_bitsize,
+                                                            unsigned int Mout_addr_ram_n_ports, std::string queue_type,
+                                                            const std::string& post_slice,
+                                                            const std::string& res_string, unsigned int i,
+                                                            const std::string& in_else,
+                                                            const std::string& mem_aggregate) const
 {
    writer->write(res_string + post_slice + " = ((base_addr <= Mout_addr_ram_queue_curr[" +
                  STR((i + 1) * Mout_addr_ram_bitsize - 1) + "+(" + queue_type + "-1)*" +
@@ -116,7 +118,7 @@ void LegacyMinimalInterfaceTestbench::cond_load_from_queue(unsigned long long Mo
                  "] < (base_addr + MEMSIZE)))" + " ? " + mem_aggregate + " : " + in_else + ";\n");
 }
 
-void LegacyMinimalInterfaceTestbench::write_call(bool) const
+void VerilogMinimalInterfaceTestbench::write_call(bool) const
 {
    writer->write("always @(negedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write("begin\n");
@@ -136,8 +138,9 @@ void LegacyMinimalInterfaceTestbench::write_call(bool) const
    writer->write(STR(STD_CLOSING_CHAR));
 }
 
-void LegacyMinimalInterfaceTestbench::update_memory_queue(std::string port_name, std::string delay_type,
-                                                          unsigned long long bitsize, unsigned long long portsize) const
+void VerilogMinimalInterfaceTestbench::update_memory_queue(std::string port_name, std::string delay_type,
+                                                           unsigned long long bitsize,
+                                                           unsigned long long portsize) const
 {
    const auto size = bitsize * portsize;
    writer->write("generate");
@@ -177,7 +180,7 @@ void LegacyMinimalInterfaceTestbench::update_memory_queue(std::string port_name,
    writer->write("endgenerate\n\n");
 }
 
-void LegacyMinimalInterfaceTestbench::write_memory_handler() const
+void VerilogMinimalInterfaceTestbench::write_memory_handler() const
 {
    // TO DO remove when upgrading svelto
    if(parameters->isOption(OPT_parse_pragma) && parameters->getOption<bool>(OPT_parse_pragma))
@@ -908,7 +911,7 @@ void LegacyMinimalInterfaceTestbench::write_memory_handler() const
    }
 }
 
-void LegacyMinimalInterfaceTestbench::write_interface_handler() const
+void VerilogMinimalInterfaceTestbench::write_interface_handler() const
 {
    if(mod->get_in_port_size())
    {
@@ -1061,7 +1064,7 @@ void LegacyMinimalInterfaceTestbench::write_interface_handler() const
    }
 }
 
-void LegacyMinimalInterfaceTestbench::write_slave_initializations(bool with_memory) const
+void VerilogMinimalInterfaceTestbench::write_slave_initializations(bool with_memory) const
 {
    if(with_memory)
    {
@@ -1096,8 +1099,8 @@ void LegacyMinimalInterfaceTestbench::write_slave_initializations(bool with_memo
    }
 }
 
-void LegacyMinimalInterfaceTestbench::write_input_signal_declaration(const tree_managerConstRef TreeM,
-                                                                     bool& with_memory) const
+void VerilogMinimalInterfaceTestbench::write_input_signal_declaration(const tree_managerConstRef TreeM,
+                                                                      bool& with_memory) const
 {
    /// write input signals declaration
    if(mod->get_in_port_size())
@@ -1159,7 +1162,7 @@ void LegacyMinimalInterfaceTestbench::write_input_signal_declaration(const tree_
          if(portInst->get_typeRef()->treenode > 0 &&
             tree_helper::IsPointerType(TreeM->GetTreeNode(portInst->get_typeRef()->treenode)))
          {
-            auto pt_node = LegacyPointedType(HLSMgr, parameters, portInst->get_id());
+            auto pt_node = VerilogPointedType(HLSMgr, parameters, portInst->get_id());
             while(GetPointer<const array_type>(pt_node))
             {
                pt_node = GetPointer<const array_type>(pt_node)->elts;
@@ -1192,7 +1195,7 @@ void LegacyMinimalInterfaceTestbench::write_input_signal_declaration(const tree_
    writer->write("reg start_next_sim;\n");
 }
 
-void LegacyMinimalInterfaceTestbench::write_output_signal_declaration() const
+void VerilogMinimalInterfaceTestbench::write_output_signal_declaration() const
 {
    /// write output signals declaration
    if(mod->get_out_port_size())
@@ -1250,7 +1253,7 @@ void LegacyMinimalInterfaceTestbench::write_output_signal_declaration() const
    }
 }
 
-void LegacyMinimalInterfaceTestbench::write_signal_queue(std::string port_name, std::string delay_type) const
+void VerilogMinimalInterfaceTestbench::write_signal_queue(std::string port_name, std::string delay_type) const
 {
    structural_objectRef port = mod->find_member(port_name, port_o_K, cir);
    const auto bitsize =
@@ -1260,7 +1263,7 @@ void LegacyMinimalInterfaceTestbench::write_signal_queue(std::string port_name, 
    writer->write("reg [" + STR(bitsize * n_ports) + "*" + delay_type + "-1:0] " + port_name + "_queue_curr;\n");
 }
 
-void LegacyMinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool&) const
+void VerilogMinimalInterfaceTestbench::write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool&) const
 {
    const auto memory_allocation_policy = parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy);
    write_input_signal_declaration(TreeM, withMemory);
@@ -1333,9 +1336,9 @@ void LegacyMinimalInterfaceTestbench::write_signals(const tree_managerConstRef T
    }
 }
 
-void LegacyMinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::string& input_name,
-                                                                       bool& first_valid_input,
-                                                                       unsigned long long bitsize) const
+void VerilogMinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::string& input_name,
+                                                                        bool& first_valid_input,
+                                                                        unsigned long long bitsize) const
 {
    if(input_name != CLOCK_PORT_NAME && input_name != RESET_PORT_NAME && input_name != START_PORT_NAME)
    {
@@ -1462,9 +1465,9 @@ void LegacyMinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std
    }
 }
 
-void LegacyMinimalInterfaceTestbench::write_read_fifo_manager(std::string par, const std::string& pi_dout_name,
-                                                              unsigned long long bitsize,
-                                                              std::string valid_suffix) const
+void VerilogMinimalInterfaceTestbench::write_read_fifo_manager(std::string par, const std::string& pi_dout_name,
+                                                               unsigned long long bitsize,
+                                                               std::string valid_suffix) const
 {
    writer->write("\n");
    writer->write_comment("Manage fifo signals for " + pi_dout_name +
@@ -1493,7 +1496,7 @@ void LegacyMinimalInterfaceTestbench::write_read_fifo_manager(std::string par, c
    writer->write("always @ (*) " + pi_dout_name + " = " + mem_aggregate + ";\n");
 }
 
-void LegacyMinimalInterfaceTestbench::write_file_reading_operations() const
+void VerilogMinimalInterfaceTestbench::write_file_reading_operations() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Write file reading operations");
    /// file reading operations
@@ -1562,8 +1565,9 @@ void LegacyMinimalInterfaceTestbench::write_file_reading_operations() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written file reading operations");
 }
 
-std::string LegacyMinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, unsigned long long int bitsize,
-                                                                     unsigned long long int Mout_addr_ram_bitsize) const
+std::string
+VerilogMinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, unsigned long long int bitsize,
+                                                          unsigned long long int Mout_addr_ram_bitsize) const
 {
    std::string mem_aggregate = "{";
    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
@@ -1581,10 +1585,10 @@ std::string LegacyMinimalInterfaceTestbench::memory_aggregate_slices(unsigned in
    return mem_aggregate;
 }
 
-std::string LegacyMinimalInterfaceTestbench::memory_aggregate_slices_queue(unsigned int i, unsigned long long bitsize,
-                                                                           unsigned long long Mout_addr_ram_bitsize,
-                                                                           unsigned int Mout_addr_ram_n_ports,
-                                                                           const std::string& queue_type) const
+std::string VerilogMinimalInterfaceTestbench::memory_aggregate_slices_queue(unsigned int i, unsigned long long bitsize,
+                                                                            unsigned long long Mout_addr_ram_bitsize,
+                                                                            unsigned int Mout_addr_ram_n_ports,
+                                                                            const std::string& queue_type) const
 {
    std::string mem_aggregate = "{";
    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)

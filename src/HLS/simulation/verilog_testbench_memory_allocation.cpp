@@ -31,12 +31,12 @@
  *
  */
 /**
- * @file legacy_testbench_memory_allocation.cpp
- * @brief Reserve memory for the pointer arguments of the top function in the legacy (XML) testbench.
+ * @file verilog_testbench_memory_allocation.cpp
+ * @brief Reserve memory for the pointer arguments of the top function in the self-contained Verilog (XML) testbench.
  *
  * Ported from bambu 2023.1 (src/HLS/simulation/testbench_memory_allocation.cpp).
  */
-#include "legacy_testbench_memory_allocation.hpp"
+#include "verilog_testbench_memory_allocation.hpp"
 
 #include "Parameter.hpp"
 #include "SimulationInformation.hpp"
@@ -47,7 +47,6 @@
 #include "dbgPrintHelper.hpp"
 #include "function_behavior.hpp"
 #include "hls_manager.hpp"
-#include "legacy_testbench_utils.hpp"
 #include "math_function.hpp"
 #include "memory.hpp"
 #include "string_manipulation.hpp"
@@ -55,6 +54,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "utility.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #include <algorithm>
 #include <filesystem>
@@ -64,16 +64,16 @@
 #include <tuple>
 #include <vector>
 
-LegacyTestbenchMemoryAllocation::LegacyTestbenchMemoryAllocation(const ParameterConstRef _parameters,
-                                                                 const HLS_managerRef _HLSMgr,
-                                                                 const DesignFlowManagerConstRef _design_flow_manager)
-    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION)
+VerilogTestbenchMemoryAllocation::VerilogTestbenchMemoryAllocation(const ParameterConstRef _parameters,
+                                                                   const HLS_managerRef _HLSMgr,
+                                                                   const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::VERILOG_TESTBENCH_MEMORY_ALLOCATION)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-HLS_step::HLSRelationships
-LegacyTestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+HLS_step::HLSRelationships VerilogTestbenchMemoryAllocation::ComputeHLSRelationships(
+    const DesignFlowStep::RelationshipType relationship_type) const
 {
    HLSRelationships ret;
    switch(relationship_type)
@@ -98,12 +98,12 @@ LegacyTestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::R
    return ret;
 }
 
-bool LegacyTestbenchMemoryAllocation::HasToBeExecuted() const
+bool VerilogTestbenchMemoryAllocation::HasToBeExecuted() const
 {
    return true;
 }
 
-DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
+DesignFlowStep_Status VerilogTestbenchMemoryAllocation::Exec()
 {
    const auto TM = HLSMgr->get_tree_manager();
    const auto flag_cpp =
@@ -163,7 +163,7 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
          std::string test_v = "0";
          if(is_memory)
          {
-            test_v = LegacyPrintVarInit(TM, p, HLSMgr->Rmem);
+            test_v = VerilogPrintVarInit(TM, p, HLSMgr->Rmem);
          }
          else if(curr_test_vector.find(param) != curr_test_vector.end())
          {
@@ -189,7 +189,7 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
             {
                const auto base_type_byte_size = [&]() -> unsigned long long
                {
-                  const auto ptd_base_type = LegacyPointedType(HLSMgr, parameters, p);
+                  const auto ptd_base_type = VerilogPointedType(HLSMgr, parameters, p);
                   std::string param_if_typename;
                   if(func_arch && func_arch->parms.count(param) &&
                      func_arch->parms.at(param).count(FunctionArchitecture::parm_typename))
@@ -217,7 +217,7 @@ DesignFlowStep_Status LegacyTestbenchMemoryAllocation::Exec()
             else
             {
                const CInitializationParserFunctorRef c_initialization_parser_functor(
-                   new ComputeReservedMemory(TM, lnode, LegacyPointedType(HLSMgr, parameters, p)));
+                   new ComputeReservedMemory(TM, lnode, VerilogPointedType(HLSMgr, parameters, p)));
                c_initialization_parser->Parse(c_initialization_parser_functor, test_v);
                const auto reserved_bytes =
                    GetPointer<ComputeReservedMemory>(c_initialization_parser_functor)->GetReservedBytes();

@@ -31,10 +31,10 @@
  *
  */
 /**
- * @file legacy_testbench_utils.cpp
- * @brief Helpers shared by the legacy (bambu 2023.1, XML-driven) testbench generation steps.
+ * @file verilog_testbench_utils.cpp
+ * @brief Helpers shared by the self-contained Verilog (bambu 2023.1, XML-driven) testbench generation steps.
  */
-#include "legacy_testbench_utils.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #include "Parameter.hpp"
 #include "behavioral_helper.hpp"
@@ -77,8 +77,8 @@ static BehavioralHelperConstRef TopBehavioralHelper(const HLS_managerRef HLSMgr,
    return HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper();
 }
 
-std::string LegacyOriginalTypename(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
-                                   const std::string& param_name)
+std::string VerilogOriginalTypename(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                    const std::string& param_name)
 {
    const auto BH = TopBehavioralHelper(HLSMgr, parameters);
    const auto func_arch = HLSMgr->module_arch ? HLSMgr->module_arch->GetArchitecture(BH->GetMangledFunctionName()) :
@@ -86,12 +86,12 @@ std::string LegacyOriginalTypename(const HLS_managerRef HLSMgr, const ParameterC
    if(!func_arch || !func_arch->parms.count(param_name) ||
       !func_arch->parms.at(param_name).count(FunctionArchitecture::parm_original_typename))
    {
-      THROW_ERROR("Legacy testbench: unknown C type for parameter " + param_name);
+      THROW_ERROR("Verilog testbench: unknown C type for parameter " + param_name);
    }
    return func_arch->parms.at(param_name).at(FunctionArchitecture::parm_original_typename);
 }
 
-std::string LegacyBaseTypename(const std::string& type_name)
+std::string VerilogBaseTypename(const std::string& type_name)
 {
    /// Strip qualifiers, pointer/reference/array declarators and extra spaces: "const float *" -> "float"
    auto base =
@@ -101,8 +101,8 @@ std::string LegacyBaseTypename(const std::string& type_name)
    return std::regex_replace(base, std::regex(R"(^ | $)"), "");
 }
 
-tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
-                                    unsigned int param_index)
+tree_nodeConstRef VerilogPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                     unsigned int param_index)
 {
    const auto TM = HLSMgr->get_tree_manager();
    const auto param_node = TM->GetTreeNode(param_index);
@@ -119,8 +119,8 @@ tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const Parameter
 
    /// Opaque pointer in the IR: recover the pointed type from the original C typename of the top parameter
    const auto param_name = TopBehavioralHelper(HLSMgr, parameters)->PrintVariable(param_index);
-   const auto type_name = LegacyOriginalTypename(HLSMgr, parameters, param_name);
-   const auto base = LegacyBaseTypename(type_name);
+   const auto type_name = VerilogOriginalTypename(HLSMgr, parameters, param_name);
+   const auto base = VerilogBaseTypename(type_name);
 
    const auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
    const tree_manipulation tree_man(TM, parameters, true, HLSMgr);
@@ -133,7 +133,7 @@ tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const Parameter
       const auto real = FindRealType(TM, base == "float" ? 32 : 64);
       if(!real)
       {
-         THROW_ERROR("Legacy testbench: no " + base + " type in the design for parameter " + param_name);
+         THROW_ERROR("Verilog testbench: no " + base + " type in the design for parameter " + param_name);
       }
       return real;
    }
@@ -186,28 +186,28 @@ tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const Parameter
    {
       return int_type(std::stoull(match[2].str()), !match[1].str().empty());
    }
-   THROW_ERROR("Legacy testbench: pointed type \"" + type_name + "\" of parameter " + param_name +
+   THROW_ERROR("Verilog testbench: pointed type \"" + type_name + "\" of parameter " + param_name +
                " is not supported yet");
    return tree_nodeConstRef();
 }
 
-tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
-                                    const std::string& param_name)
+tree_nodeConstRef VerilogPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                     const std::string& param_name)
 {
    const auto BH = TopBehavioralHelper(HLSMgr, parameters);
    for(const auto& p : BH->get_parameters())
    {
       if(BH->PrintVariable(p) == param_name)
       {
-         return LegacyPointedType(HLSMgr, parameters, p);
+         return VerilogPointedType(HLSMgr, parameters, p);
       }
    }
-   THROW_ERROR("Legacy testbench: " + param_name + " is not a parameter of the top function");
+   THROW_ERROR("Verilog testbench: " + param_name + " is not a parameter of the top function");
    return tree_nodeConstRef();
 }
 
-tree_nodeConstRef LegacyTypedPointerType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
-                                         unsigned int param_index)
+tree_nodeConstRef VerilogTypedPointerType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                          unsigned int param_index)
 {
    const auto TM = HLSMgr->get_tree_manager();
    const auto param_type = tree_helper::CGetType(TM->GetTreeNode(param_index));
@@ -216,5 +216,5 @@ tree_nodeConstRef LegacyTypedPointerType(const HLS_managerRef HLSMgr, const Para
       return param_type;
    }
    const tree_manipulation tree_man(TM, parameters, true, HLSMgr);
-   return tree_man.GetPointerType(LegacyPointedType(HLSMgr, parameters, param_index));
+   return tree_man.GetPointerType(VerilogPointedType(HLSMgr, parameters, param_index));
 }

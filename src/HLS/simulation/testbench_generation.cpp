@@ -40,7 +40,7 @@
  */
 #include "testbench_generation.hpp"
 
-#include "legacy_testbench_utils.hpp"
+#include "verilog_testbench_utils.hpp"
 
 #include "Discrepancy.hpp"
 #include "HDL_manager.hpp"
@@ -107,10 +107,10 @@ TestbenchGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipT
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
-         if(LegacyTestbenchRequested(parameters))
+         if(VerilogTestbenchRequested(parameters))
          {
-            /// --testbench-style=legacy|both: also generate the bambu 2023.1 self-contained Verilog testbench
-            ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION,
+            /// --testbench-style=verilog|both: also generate the bambu 2023.1 self-contained Verilog testbench
+            ret.insert(std::make_tuple(HLSFlowStep_Type::VERILOG_TESTBENCH_GENERATION,
                                        HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          }
          if(parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy))
@@ -153,10 +153,10 @@ void TestbenchGeneration::Initialize()
 
 DesignFlowStep_Status TestbenchGeneration::Exec()
 {
-   if(LegacyTestbenchOnly(parameters))
+   if(VerilogTestbenchOnly(parameters))
    {
-      /// The legacy testbench (and HLSMgr->RSim->filename_bench) was produced by LegacyTestbenchGeneration
-      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---Using the legacy testbench, DPI-C testbench skipped");
+      /// The Verilog testbench (and HLSMgr->RSim->filename_bench) was produced by VerilogTestbenchGeneration
+      INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "---Using the Verilog testbench, DPI-C testbench skipped");
       return DesignFlowStep_Status::SUCCESS;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "-->Generating testbench HDL");
@@ -165,7 +165,8 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
                         structural_type_descriptorRef(new structural_type_descriptor(CST_STR_BAMBU_TESTBENCH "_impl")));
    const auto tb_cir = tb_top->get_circ();
    const auto tb_mod = GetPointerS<module>(tb_cir);
-   const auto add_internal_connection = [&](structural_objectRef src, structural_objectRef dest) {
+   const auto add_internal_connection = [&](structural_objectRef src, structural_objectRef dest)
+   {
       THROW_ASSERT(src->get_kind() == dest->get_kind(), "Port with different types cannot be connected.");
       const auto sig_id = "sig_" + dest->get_id();
       auto sig = tb_cir->find_member(sig_id, signal_o_K, tb_cir);
@@ -197,7 +198,8 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
    // Add top module wrapper
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Generating top level interface wrapper...");
-   const auto top_id = [&]() {
+   const auto top_id = [&]()
+   {
       const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
       THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
       const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
@@ -500,8 +502,10 @@ DesignFlowStep_Status TestbenchGeneration::Exec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "Connecting DUT control ports...");
    {
-      const auto has_dataflow =
-          std::any_of(HLSMgr->module_arch->begin(), HLSMgr->module_arch->end(), [](const auto& fsymbol_arch) {
+      const auto has_dataflow = std::any_of(
+          HLSMgr->module_arch->begin(), HLSMgr->module_arch->end(),
+          [](const auto& fsymbol_arch)
+          {
              return (fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top) !=
                          fsymbol_arch.second->attrs.end() &&
                      fsymbol_arch.second->attrs.find(FunctionArchitecture::func_dataflow_top)->second == "1") ||
@@ -809,7 +813,8 @@ std::vector<std::string> TestbenchGeneration::print_var_init(const tree_managerC
 {
    std::vector<std::string> init_els;
    const auto tn = TM->GetTreeNode(var);
-   const auto init_node = [&]() -> tree_nodeRef {
+   const auto init_node = [&]() -> tree_nodeRef
+   {
       const auto vd = GetPointer<const var_decl>(tn);
       if(vd && vd->init)
       {
