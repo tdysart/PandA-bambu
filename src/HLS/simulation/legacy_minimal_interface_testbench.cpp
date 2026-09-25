@@ -558,8 +558,7 @@ void LegacyMinimalInterfaceTestbench::write_memory_handler() const
          writer->write(STR(STD_OPENING_CHAR));
          writer->write_comment("error\n");
          writer->write("$display(\"ERROR - Mout_we_ram and Mout_oe_ram both enabled\");\n");
-         writer->write("$fclose(res_file);\n");
-         writer->write("$fclose(file);\n");
+         writer->write("$fflush(res_file);\n");
          writer->write("$finish;\n");
          writer->write(STR(STD_CLOSING_CHAR));
          writer->write("end\n");
@@ -897,8 +896,7 @@ void LegacyMinimalInterfaceTestbench::write_memory_handler() const
          writer->write(STR(STD_OPENING_CHAR));
          writer->write_comment("error\n");
          writer->write("$display(\"ERROR - Mout_we_ram and Mout_oe_ram both enabled\");\n");
-         writer->write("$fclose(res_file);\n");
-         writer->write("$fclose(file);\n");
+         writer->write("$fflush(res_file);\n");
          writer->write("$finish;\n");
          writer->write(STR(STD_CLOSING_CHAR));
          writer->write("end\n");
@@ -1368,8 +1366,7 @@ void LegacyMinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std
          writer->write("begin\n");
          {
             writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));
@@ -1410,8 +1407,7 @@ void LegacyMinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std
          {
             writer->write(
                 "$display(\"ERROR - End of file reached before getting all the values for the parameters\");\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));
@@ -1423,8 +1419,7 @@ void LegacyMinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std
          {
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));

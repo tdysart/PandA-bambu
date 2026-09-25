@@ -781,8 +781,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
                      writer->write_comment("error\n");
                      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", "
                                    "_ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
+                     writer->write("$fflush(res_file);\n");
                      writer->write("$finish;\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -923,8 +922,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             writer->write_comment("error\n");
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -981,8 +979,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             writer->write_comment("error\n");
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -1015,8 +1012,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
                      writer->write_comment("error\n");
                      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", "
                                    "_ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
+                     writer->write("$fflush(res_file);\n");
                      writer->write("$finish;\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1114,8 +1110,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             writer->write_comment("error\n");
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -1148,8 +1143,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
                      writer->write_comment("error\n");
                      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", "
                                    "_ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
+                     writer->write("$fflush(res_file);\n");
                      writer->write("$finish;\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1247,8 +1241,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             writer->write_comment("error\n");
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -1305,8 +1298,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
                      writer->write_comment("error\n");
                      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", "
                                    "_ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
+                     writer->write("$fflush(res_file);\n");
                      writer->write("$finish;\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1404,8 +1396,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             writer->write_comment("error\n");
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -1473,8 +1464,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
                      writer->write_comment("error\n");
                      writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", "
                                    "_ch_[7:0]);\n");
-                     writer->write("$fclose(res_file);\n");
-                     writer->write("$fclose(file);\n");
+                     writer->write("$fflush(res_file);\n");
                      writer->write("$finish;\n");
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
@@ -1627,8 +1617,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
             writer->write_comment("error\n");
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -1661,8 +1650,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
                writer->write_comment("error\n");
                writer->write(
                    "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-               writer->write("$fclose(res_file);\n");
-               writer->write("$fclose(file);\n");
+               writer->write("$fflush(res_file);\n");
                writer->write("$finish;\n");
             }
             writer->write(STR(STD_CLOSING_CHAR));
@@ -1751,8 +1739,7 @@ void LegacyTestbenchGenerationBaseStep::write_output_checks(const tree_managerCo
       writer->write("begin\n");
       writer->write_comment("error\n");
       writer->write("$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
+      writer->write("$fflush(res_file);\n");
       writer->write("$finish;\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -2212,6 +2199,8 @@ void LegacyTestbenchGenerationBaseStep::open_value_file(const std::string& input
    writer->write("end\n");
 }
 
+/// The testbench never closes values.txt or results.txt (2023.1 did before every $finish): Verilator completes the
+/// time step after $finish, and a block reading or writing a closed file then crashes. results.txt is flushed.
 void LegacyTestbenchGenerationBaseStep::open_result_file(const std::string& result_file) const
 {
    writer->write_comment("OPEN FILE WHERE results will be written\n");
@@ -2221,7 +2210,6 @@ void LegacyTestbenchGenerationBaseStep::open_result_file(const std::string& resu
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write("$display(\"ERROR - Error opening the res_file\");\n");
-   writer->write("$fclose(file);\n");
    writer->write("$finish;");
    writer->write_comment("Terminate\n");
    writer->write("");
@@ -2381,8 +2369,7 @@ void LegacyTestbenchGenerationBaseStep::testbench_controller_machine() const
    if(HLSMgr->RSim->test_vectors.size() <= 1)
    {
       writer->write_comment("wait a cycle (needed for a correct simulation)\n");
-      writer->write("            $fclose(res_file);\n");
-      writer->write("            $fclose(file);\n");
+      writer->write("            $fflush(res_file);\n");
       writer->write("            $finish;\n");
    }
    else
@@ -2692,8 +2679,7 @@ void LegacyTestbenchGenerationBaseStep::write_max_simulation_time_control() cons
    writer->write("$display(\"Simulation not completed into %d cycles\", `SIMULATION_LENGTH);\n");
    writer->write("$fwrite(res_file, \"X\\t\");\n");
    writer->write("$fwrite(res_file, \"%d\\n\", `SIMULATION_LENGTH);\n");
-   writer->write("$fclose(res_file);\n");
-   writer->write("$fclose(file);\n");
+   writer->write("$fflush(res_file);\n");
    writer->write("$finish;\n");
    writer->write(STR(STD_CLOSING_CHAR));
    writer->write("end\n");
@@ -2711,8 +2697,7 @@ void LegacyTestbenchGenerationBaseStep::reading_base_memory_address_from_file() 
    writer->write("begin\n");
    {
       writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
-      writer->write("$fclose(res_file);\n");
-      writer->write("$fclose(file);\n");
+      writer->write("$fflush(res_file);\n");
       writer->write("$finish;\n");
    }
    writer->write(STR(STD_CLOSING_CHAR));
@@ -2847,8 +2832,7 @@ void LegacyTestbenchGenerationBaseStep::read_input_value_from_file(const std::st
          writer->write("begin\n");
          {
             writer->write("$display(\"No more values found. Simulation(s) executed: %d.\\n\", _n_);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));
@@ -2889,8 +2873,7 @@ void LegacyTestbenchGenerationBaseStep::read_input_value_from_file(const std::st
          {
             writer->write(
                 "$display(\"ERROR - End of file reached before getting all the values for the parameters\");\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));
@@ -2902,8 +2885,7 @@ void LegacyTestbenchGenerationBaseStep::read_input_value_from_file(const std::st
          {
             writer->write(
                 "$display(\"ERROR - Unknown error while reading the file. Character found: %c\", _ch_[7:0]);\n");
-            writer->write("$fclose(res_file);\n");
-            writer->write("$fclose(file);\n");
+            writer->write("$fflush(res_file);\n");
             writer->write("$finish;\n");
          }
          writer->write(STR(STD_CLOSING_CHAR));

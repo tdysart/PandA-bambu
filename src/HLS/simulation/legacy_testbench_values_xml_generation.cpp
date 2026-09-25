@@ -85,6 +85,9 @@ HLS_step::HLSRelationships LegacyTestbenchValuesXMLGeneration::ComputeHLSRelatio
       {
          ret.insert(std::make_tuple(HLSFlowStep_Type::TEST_VECTOR_PARSER, HLSFlowStepSpecializationConstRef(),
                                     HLSFlowStep_Relationship::TOP_FUNCTION));
+         /// fills in the expected outputs when the test vectors have none
+         ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_EXPECTED_VALUES,
+                                    HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          /// param_mem_size/param_next_off/param_address are computed there
          ret.insert(std::make_tuple(HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION,
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
@@ -118,9 +121,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
    const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    if(!HLSMgr->RSim->results_available)
    {
-      THROW_ERROR("The legacy testbench needs expected outputs in the XML test vectors (param:output, "
-                  "param:init_output_file or return attributes); computing them by executing the C "
-                  "specification is not supported yet");
+      THROW_ERROR("The legacy testbench has no expected outputs: neither the XML test vectors (param:output, "
+                  "param:init_output_file or return attributes) nor the host execution provided them");
    }
    std::filesystem::create_directories(output_directory);
    const auto output_file_name = output_directory / (STR_CST_legacy_testbench_values_basename ".txt");
@@ -345,6 +347,8 @@ DesignFlowStep_Status LegacyTestbenchValuesXMLGeneration::Exec()
              output_stream, TM, behavioral_helper, tree_helper::SizeAlloc(return_type) / 8, return_type,
              TestbenchGeneration_MemoryType::RETURN, parameters));
          c_initialization_parser->Parse(c_initialization_parser_functor, curr_test_vector.at("return"));
+         /// the testbench expects the expected return value to be terminated like a pointer parameter's
+         output_stream << "e" << std::endl;
       }
       ++v_idx;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered vector");

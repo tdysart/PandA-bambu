@@ -50,6 +50,7 @@ noinst_HEADERS = \
    CTestbenchExecution.hpp \
    compute_reserved_memory.hpp \
    legacy_minimal_interface_testbench.hpp \
+   legacy_testbench_expected_values.hpp \
    legacy_testbench_generation_base_step.hpp \
    legacy_testbench_memory_allocation.hpp \
    legacy_testbench_utils.hpp \
@@ -69,6 +70,7 @@ lib_simulation_la_SOURCES = \
    CTestbenchExecution.cpp \
    compute_reserved_memory.cpp \
    legacy_minimal_interface_testbench.cpp \
+   legacy_testbench_expected_values.cpp \
    legacy_testbench_generation_base_step.cpp \
    legacy_testbench_memory_allocation.cpp \
    legacy_testbench_utils.cpp \

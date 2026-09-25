@@ -78,6 +78,19 @@ These helpers from 2023.1 are still in the tree, unused, and can be reused:
       `scripts/mkinc/llvm_to_verilog_legacy_tb.mk`): passes in 15473 cycles
       with Verilator and under SST (verilator-sst), and a corrupted expected
       output fails.
+- [x] Phase 2: expected outputs from a host execution of the specification,
+      so the XML only needs inputs. `LegacyTestbenchExpectedValues` runs when
+      the test vectors carry no expected outputs. It writes a C driver
+      (`HLS_output/simulation/legacy_expected_values.c`) that calls the top
+      function on every test vector and prints the final content of its
+      pointer parameters and its return value, links it with the input files
+      (C or LLVM IR) through `CompilerWrapper`, runs it, and stores the
+      results as `param:output`/`return`. Instead of porting 2023.1's
+      `HLSCWriter` (1669 lines, tied to the old C backend), the driver is built
+      from the parsed test vectors and the parameters' original C types.
+      Scalar and pointer parameters of C integer and float/double types.
+      Not supported: C++ input, `.dat` initialization files, a `main` in the
+      input files, struct/array element types.
 
 ## Findings
 
@@ -105,6 +118,13 @@ Things that differ from simply restoring the 2023.1 code:
   pointer argument's type `void*`, so `LegacyPointedType` has nothing to go
   on. Passing `--architecture-xml` with `original_typename="float*"` (the
   format bambu's clang plugin writes) fixes it; the parameters are `P0..PN`.
+- **Return values** were not followed by the `e` the testbench waits for,
+  so a second test vector failed to parse. 2023.1's XML path had the same
+  gap.
+- **Closing files before `$finish`.** Verilator completes the time step after
+  `$finish`, and with several test vectors a block then read the closed
+  `values.txt` and crashed (after passing). The testbench no longer closes
+  its files, and flushes `results.txt`.
 - **Relative paths.** The testbench opens `HLS_output/simulation/values.txt`
   and `results.txt` relative to the working directory (2023.1 used absolute
   paths), so it must run from bambu's output directory.
@@ -114,8 +134,6 @@ Things that differ from simply restoring the 2023.1 code:
 
 ## Next
 
-- Phase 2: expected values from a host execution of the C code (port the
-  pre-DPI `HLSCWriter`), so the XML only needs inputs
 - Struct/array element types in `LegacyPointedType`
 - Non-Verilator simulators (the `_tb_top` wrapper path is ported but unused)
 

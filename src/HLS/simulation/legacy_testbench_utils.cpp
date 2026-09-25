@@ -68,6 +68,39 @@ static tree_nodeConstRef FindRealType(const tree_managerConstRef TM, unsigned lo
    return tree_nodeConstRef();
 }
 
+/// Behavioral helper of the (single) top function
+static BehavioralHelperConstRef TopBehavioralHelper(const HLS_managerRef HLSMgr, const ParameterConstRef parameters)
+{
+   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
+   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
+   const auto top_fnode = HLSMgr->get_tree_manager()->GetFunction(top_symbols.front());
+   return HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper();
+}
+
+std::string LegacyOriginalTypename(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                   const std::string& param_name)
+{
+   const auto BH = TopBehavioralHelper(HLSMgr, parameters);
+   const auto func_arch = HLSMgr->module_arch ? HLSMgr->module_arch->GetArchitecture(BH->GetMangledFunctionName()) :
+                                                FunctionArchitectureRef();
+   if(!func_arch || !func_arch->parms.count(param_name) ||
+      !func_arch->parms.at(param_name).count(FunctionArchitecture::parm_original_typename))
+   {
+      THROW_ERROR("Legacy testbench: unknown C type for parameter " + param_name);
+   }
+   return func_arch->parms.at(param_name).at(FunctionArchitecture::parm_original_typename);
+}
+
+std::string LegacyBaseTypename(const std::string& type_name)
+{
+   /// Strip qualifiers, pointer/reference/array declarators and extra spaces: "const float *" -> "float"
+   auto base =
+       std::regex_replace(type_name, std::regex(R"(\b(const|volatile|restrict|__restrict__|__restrict)\b)"), " ");
+   base = std::regex_replace(base, std::regex(R"(\(\s*\*\s*\)|\[[^\]]*\]|[*&])"), " ");
+   base = std::regex_replace(base, std::regex(R"(\s+)"), " ");
+   return std::regex_replace(base, std::regex(R"(^ | $)"), "");
+}
+
 tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
                                     unsigned int param_index)
 {
@@ -85,26 +118,9 @@ tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const Parameter
    }
 
    /// Opaque pointer in the IR: recover the pointed type from the original C typename of the top parameter
-   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
-   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
-   const auto top_fnode = TM->GetFunction(top_symbols.front());
-   const auto BH = HLSMgr->CGetFunctionBehavior(top_fnode->index)->CGetBehavioralHelper();
-   const auto param_name = BH->PrintVariable(param_index);
-   const auto func_arch = HLSMgr->module_arch ? HLSMgr->module_arch->GetArchitecture(BH->GetMangledFunctionName()) :
-                                                FunctionArchitectureRef();
-   if(!func_arch || !func_arch->parms.count(param_name) ||
-      !func_arch->parms.at(param_name).count(FunctionArchitecture::parm_original_typename))
-   {
-      THROW_ERROR("Legacy testbench: unknown pointed type for parameter " + param_name);
-   }
-   const auto& type_name = func_arch->parms.at(param_name).at(FunctionArchitecture::parm_original_typename);
-
-   /// Strip qualifiers, pointer/reference/array declarators and extra spaces: "const float *" -> "float"
-   auto base =
-       std::regex_replace(type_name, std::regex(R"(\b(const|volatile|restrict|__restrict__|__restrict)\b)"), " ");
-   base = std::regex_replace(base, std::regex(R"(\(\s*\*\s*\)|\[[^\]]*\]|[*&])"), " ");
-   base = std::regex_replace(base, std::regex(R"(\s+)"), " ");
-   base = std::regex_replace(base, std::regex(R"(^ | $)"), "");
+   const auto param_name = TopBehavioralHelper(HLSMgr, parameters)->PrintVariable(param_index);
+   const auto type_name = LegacyOriginalTypename(HLSMgr, parameters, param_name);
+   const auto base = LegacyBaseTypename(type_name);
 
    const auto m64P = parameters->getOption<std::string>(OPT_gcc_m_env).find("-m64") != std::string::npos;
    const tree_manipulation tree_man(TM, parameters, true, HLSMgr);
@@ -178,10 +194,7 @@ tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const Parameter
 tree_nodeConstRef LegacyPointedType(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
                                     const std::string& param_name)
 {
-   const auto TM = HLSMgr->get_tree_manager();
-   const auto top_symbols = parameters->getOption<std::vector<std::string>>(OPT_top_functions_names);
-   THROW_ASSERT(top_symbols.size() == 1, "Expected single top function name");
-   const auto BH = HLSMgr->CGetFunctionBehavior(TM->GetFunction(top_symbols.front())->index)->CGetBehavioralHelper();
+   const auto BH = TopBehavioralHelper(HLSMgr, parameters);
    for(const auto& p : BH->get_parameters())
    {
       if(BH->PrintVariable(p) == param_name)

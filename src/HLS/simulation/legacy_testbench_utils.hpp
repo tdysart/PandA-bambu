@@ -60,6 +60,15 @@ REF_FORWARD_DECL(HLS_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 
 /**
+ * Original C typename of a parameter of the top function (module_arch parm_original_typename), e.g. "const float *"
+ */
+std::string LegacyOriginalTypename(const HLS_managerRef HLSMgr, const ParameterConstRef parameters,
+                                   const std::string& param_name);
+
+/// Element type name of a C typename, without qualifiers and pointer/array declarators: "const float *" -> "float"
+std::string LegacyBaseTypename(const std::string& type_name);
+
+/**
  * Pointed type of a pointer parameter of the top function. With opaque pointers the IR only has void*, so the
  * type is rebuilt from the original C typename of the parameter (module_arch parm_original_typename).
  * @return the pointed type, or null if the parameter is not a pointer

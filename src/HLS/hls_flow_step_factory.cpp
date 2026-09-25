@@ -77,6 +77,7 @@
 #include "hls_synthesis_flow.hpp"
 #include "initialize_hls.hpp"
 #include "legacy_minimal_interface_testbench.hpp"
+#include "legacy_testbench_expected_values.hpp"
 #include "legacy_testbench_memory_allocation.hpp"
 #include "legacy_testbench_values_xml_generation.hpp"
 #include "mem_dominator_allocation.hpp"
@@ -491,16 +492,22 @@ HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type type, const unsigne
              DesignFlowStepRef(new LegacyMinimalInterfaceTestbench(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
+      case HLSFlowStep_Type::LEGACY_TESTBENCH_EXPECTED_VALUES:
+      {
+         design_flow_step =
+             DesignFlowStepRef(new LegacyTestbenchExpectedValues(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION:
       {
-         design_flow_step = DesignFlowStepRef(
-             new LegacyTestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new LegacyTestbenchMemoryAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION:
       {
-         design_flow_step = DesignFlowStepRef(
-             new LegacyTestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
+         design_flow_step =
+             DesignFlowStepRef(new LegacyTestbenchValuesXMLGeneration(parameters, HLS_mgr, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::TOP_ENTITY_CREATION:
@@ -629,6 +636,7 @@ DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(
          case HLSFlowStep_Type::HW_PATH_COMPUTATION:
          case HLSFlowStep_Type::HW_DISCREPANCY_ANALYSIS:
          case HLSFlowStep_Type::TESTBENCH_GENERATION:
+         case HLSFlowStep_Type::LEGACY_TESTBENCH_EXPECTED_VALUES:
          case HLSFlowStep_Type::LEGACY_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::LEGACY_TESTBENCH_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::LEGACY_TESTBENCH_VALUES_XML_GENERATION:
