@@ -4,7 +4,16 @@
 #include <stdint.h>
 #include <float.h>
 #include "musl_math.h"
+#if defined(__APPLE__)
+#include <machine/endian.h>
+#ifndef __BYTE_ORDER
+#define __BYTE_ORDER BYTE_ORDER
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
+#define __BIG_ENDIAN BIG_ENDIAN
+#endif
+#else
 #include <endian.h>
+#endif
 // #include "fp_arch.h"
 
 /* Support non-nearest rounding mode.  */

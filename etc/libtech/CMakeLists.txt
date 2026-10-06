@@ -67,7 +67,7 @@ function(libtech_generate_spec_data base_xml)
       set(cmd "${cmd} \"${CMAKE_CURRENT_SOURCE_DIR}/${seed_xml}\"")
    endforeach()
    # Drop XML declarations that appear inside merged content, but keep the first line
-   set(cmd "${cmd} | sed '1b; /^<?xml/d' | \"${GZIP_EXECUTABLE}\" > \"${out_file}\"")
+   set(cmd "${cmd} | sed -e '1b' -e '/^<?xml/d' | \"${GZIP_EXECUTABLE}\" > \"${out_file}\"")
    add_custom_command(OUTPUT "${out_file}"
       COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_CURRENT_BINARY_DIR}"
       COMMAND bash -lc "${cmd}"

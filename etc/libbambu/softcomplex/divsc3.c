@@ -12,6 +12,13 @@
 #include <complex.h>
 #include <math.h>
 
+#ifdef __APPLE__
+/* isnanf/isinff/finitef are glibc extensions; use the C99 type-generic macros. */
+#define isnanf(x) isnan(x)
+#define isinff(x) isinf(x)
+#define finitef(x) isfinite(x)
+#endif
+
 __complex float __divsc3(float a, float b, float c, float d)
 {
    float scale, denom, x, y;

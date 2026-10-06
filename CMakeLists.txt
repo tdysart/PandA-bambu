@@ -18,7 +18,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #    build compiler therefore fails.
 # Verify the compiler at configure time instead of surfacing the failure deep
 # in the build.
+# On macOS the clang plugins must share the C++ standard library (libc++) of
+# the clang they are loaded into, so Apple clang is accepted there; GCC's
+# libstdc++ would be ABI-incompatible with Homebrew's clang.
 foreach(_lang C CXX)
+   if(APPLE AND CMAKE_${_lang}_COMPILER_ID MATCHES "Clang"
+      AND CMAKE_${_lang}_COMPILER_VERSION VERSION_GREATER_EQUAL 16)
+      continue()
+   endif()
    if(NOT CMAKE_${_lang}_COMPILER_ID STREQUAL "GNU"
       OR NOT CMAKE_${_lang}_COMPILER_VERSION VERSION_GREATER_EQUAL 13)
       message(FATAL_ERROR

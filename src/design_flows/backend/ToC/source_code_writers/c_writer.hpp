@@ -36,6 +36,7 @@
 #include "custom_set.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
+#include "var_pp_functor.hpp"
 
 #include <deque>
 #include <list>

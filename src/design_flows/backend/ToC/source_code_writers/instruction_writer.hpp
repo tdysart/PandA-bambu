@@ -32,6 +32,7 @@
 
 #include "graph.hpp"
 #include "refcount.hpp"
+#include "var_pp_functor.hpp"
 
 #include <fstream>
 #include <iosfwd>

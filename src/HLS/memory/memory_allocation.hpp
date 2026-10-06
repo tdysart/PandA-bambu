@@ -32,6 +32,7 @@
 
 #include "custom_set.hpp"
 #include "hls_step.hpp"
+#include "memory.hpp"
 #include "refcount.hpp"
 #include <list>
 #include <map>

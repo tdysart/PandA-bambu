@@ -37,6 +37,7 @@
 #include "ir_node.hpp"
 #include "panda_types.hpp"
 #include "refcount.hpp"
+#include "var_pp_functor.hpp"
 
 #include <cstddef>
 #include <list>

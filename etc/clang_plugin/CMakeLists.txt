@@ -189,11 +189,20 @@ function(_panda_add_clang_plugins ver)
       )
       target_compile_options(${tgt} PRIVATE ${_clang_cxxflags} ${_plugin_std_override} ${_clang_defs})
       target_compile_definitions(${tgt} PRIVATE ADD_RSP=${add_rsp})
-      target_link_options(${tgt} PRIVATE
-         ${_clang_ldflags}
-         -static-libstdc++
-         "-Wl,-z,nodelete"
-      )
+      if(APPLE)
+         # ld64: no -static-libstdc++ or -z nodelete; plugin symbols resolve
+         # against the host clang at load time.
+         target_link_options(${tgt} PRIVATE
+            ${_clang_ldflags}
+            "-Wl,-undefined,dynamic_lookup"
+         )
+      else()
+         target_link_options(${tgt} PRIVATE
+            ${_clang_ldflags}
+            -static-libstdc++
+            "-Wl,-z,nodelete"
+         )
+      endif()
       target_link_libraries(${tgt} PRIVATE buddy)
       if(TARGET pugixml-static)
          target_link_libraries(${tgt} PRIVATE pugixml-static)

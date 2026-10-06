@@ -47,6 +47,10 @@ get_filename_component(LIBBAMBU_CLANG_BIN_DIR "${PANDA_CLANG${_libbambu_choice}_
 set(LIBBAMBU_M64 ${PANDA_CLANG${_libbambu_choice}_M64})
 set(LIBBAMBU_M32 ${PANDA_CLANG${_libbambu_choice}_M32})
 set(LIBBAMBU_MX32 ${PANDA_CLANG${_libbambu_choice}_MX32})
+if(APPLE)
+   # No x32 ABI on Darwin.
+   set(LIBBAMBU_MX32 0)
+endif()
 
 set(BAMBUCC "${CMAKE_BINARY_DIR}/src/bambu-cc")
 set(LIBBAMBU_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -210,6 +214,11 @@ function(_panda_add_arch arch arch_flag)
    set(_softint_cflags "-Os -finline-functions --extra-cc-options=\"-mllvm -inline-threshold=10000\" ${LIBBAMBU_INC} ${BOOST_INC_FLAGS}")
    set(_libm_cppflags "${BOOST_INC_FLAGS} ${LIBBAMBU_INC} -DNO_RAISE_EXCEPTIONS")
    set(_libm_common_cflags "-O2 -finline-functions -finline-hint-functions -fno-builtin -fno-math-errno -fno-signaling-nans -fno-trapping-math")
+   if(APPLE)
+      # arm64 hosts define __FP_FAST_FMA, which makes musl's log/log2/pow call
+      # fma() and emit llvm.fma, an intrinsic the bambu backend cannot lower.
+      string(APPEND _libm_common_cflags " -U__FP_FAST_FMA -U__FP_FAST_FMAF")
+   endif()
    set(_libm_cflags "-D_FLT_NO_DENORMALS ${_libm_cppflags} ${_libm_common_cflags}")
    set(_libm_s_cflags "${_libm_cppflags} ${_libm_common_cflags}")
 

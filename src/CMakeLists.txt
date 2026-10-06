@@ -343,6 +343,15 @@ add_executable(libbambu_unit ${PANDA_UNIT_TEST_SOURCES})
 target_link_libraries(libbambu_unit PRIVATE panda_core Boost::headers)
 add_test(NAME libbambu_unit COMMAND libbambu_unit)
 
+# ld64 has no --whole-archive/-z origin: use -force_load and @executable_path.
+if(APPLE)
+   set(PANDA_WHOLE_ARCHIVE_HDL_GENERATORS "-Wl,-force_load,$<TARGET_FILE:panda_hdl_generators>")
+   set(PANDA_ORIGIN_RPATH "@executable_path")
+else()
+   set(PANDA_WHOLE_ARCHIVE_HDL_GENERATORS "-Wl,--whole-archive" panda_hdl_generators "-Wl,--no-whole-archive")
+   set(PANDA_ORIGIN_RPATH "\$ORIGIN")
+endif()
+
 if(PANDA_BUILD_BAMBU)
    add_executable(bambu
       bambu.cpp
@@ -351,12 +360,14 @@ if(PANDA_BUILD_BAMBU)
       global_variables.cpp
    )
    target_link_libraries(bambu PRIVATE
-      "-Wl,--whole-archive" panda_hdl_generators "-Wl,--no-whole-archive"
+      ${PANDA_WHOLE_ARCHIVE_HDL_GENERATORS}
       panda_core
    )
-   target_link_options(bambu PRIVATE "-Wl,-z,origin")
+   if(NOT APPLE)
+      target_link_options(bambu PRIVATE "-Wl,-z,origin")
+   endif()
    set_target_properties(bambu PROPERTIES
-      INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
+      INSTALL_RPATH "${PANDA_ORIGIN_RPATH}/../${PANDA_LIB_INSTALLDIR_REL}"
    )
    install(CODE "
       if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu\")
@@ -376,12 +387,14 @@ if(PANDA_BUILD_EUCALYPTUS)
       global_variables.cpp
    )
    target_link_libraries(eucalyptus PRIVATE
-      "-Wl,--whole-archive" panda_hdl_generators "-Wl,--no-whole-archive"
+      ${PANDA_WHOLE_ARCHIVE_HDL_GENERATORS}
       panda_core
    )
-   target_link_options(eucalyptus PRIVATE "-Wl,-z,origin")
+   if(NOT APPLE)
+      target_link_options(eucalyptus PRIVATE "-Wl,-z,origin")
+   endif()
    set_target_properties(eucalyptus PROPERTIES
-      INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
+      INSTALL_RPATH "${PANDA_ORIGIN_RPATH}/../${PANDA_LIB_INSTALLDIR_REL}"
    )
    install(CODE "
       if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/eucalyptus\")
@@ -401,12 +414,14 @@ if(PANDA_BUILD_CC)
       global_variables.cpp
    )
    target_link_libraries(bambu-cc PRIVATE
-      "-Wl,--whole-archive" panda_hdl_generators "-Wl,--no-whole-archive"
+      ${PANDA_WHOLE_ARCHIVE_HDL_GENERATORS}
       panda_core
    )
-   target_link_options(bambu-cc PRIVATE "-Wl,-z,origin")
+   if(NOT APPLE)
+      target_link_options(bambu-cc PRIVATE "-Wl,-z,origin")
+   endif()
    set_target_properties(bambu-cc PROPERTIES
-      INSTALL_RPATH "\$ORIGIN/../${PANDA_LIB_INSTALLDIR_REL}"
+      INSTALL_RPATH "${PANDA_ORIGIN_RPATH}/../${PANDA_LIB_INSTALLDIR_REL}"
    )
    install(CODE "
       if(NOT EXISTS \"${CMAKE_BINARY_DIR}/src/bambu-cc\")

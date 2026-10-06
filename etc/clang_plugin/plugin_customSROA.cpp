@@ -399,7 +399,8 @@ namespace
       return returnValue;
    }
 
-   uint64_t computeIndexMemory(const std::vector<uint64_t>& indices, const std::vector<size_t>& origDims,
+   template <typename IdxT>
+   uint64_t computeIndexMemory(const std::vector<IdxT>& indices, const std::vector<size_t>& origDims,
                                const PartitionScheme& scheme)
    {
       uint64_t returnIdx = 0;

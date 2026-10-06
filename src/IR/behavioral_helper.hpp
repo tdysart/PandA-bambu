@@ -33,6 +33,7 @@
 #include "graph.hpp"
 #include "ir_node.hpp"
 #include "refcount.hpp"
+#include "var_pp_functor.hpp"
 
 #include <list>
 #include <string>

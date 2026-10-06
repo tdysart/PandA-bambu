@@ -67,7 +67,9 @@ for lib_xml in "$@"; do
     lib_rem=$(( ${line_count} - ${lib_end} + ${pad_newline} + 1 ))
 
     # Insert <technology> tag contents from lib_xml file
-    tail -n +${lib_start} "${lib_xml}"|head -n-${lib_rem} >> "${output_file}"
+    # Portable replacement for `head -n-N` (BSD head rejects negative counts).
+    keep=$(( ${line_count} - ${lib_start} + 1 - ${lib_rem} ))
+    tail -n +${lib_start} "${lib_xml}"|head -n ${keep} >> "${output_file}"
 done
 
 # Copy base file reminder

@@ -34,6 +34,9 @@
 #include "string_manipulation.hpp"
 
 #include <cstdlib>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 #include <random>
 #include <regex>
 
@@ -101,6 +104,16 @@ static std::filesystem::path get_exe_path()
             return std::filesystem::path(real_path);
 #endif
       }
+   }
+#elif defined(__APPLE__)
+   char exe_path[PATH_MAX];
+   uint32_t size = sizeof(exe_path);
+   if(_NSGetExecutablePath(exe_path, &size) == 0)
+   {
+      char real_path[PATH_MAX];
+      if(realpath(exe_path, real_path))
+         return std::filesystem::path(real_path);
+      return std::filesystem::path(exe_path);
    }
 #elif defined(__sun__) && defined(__svr4__)
    char exe_path[PATH_MAX];

@@ -549,6 +549,9 @@ static FrontendPluginRegistry::Add<ProbeAction> X1(\"print-fns\", \"probe plugin
          set(_std_flag "-std=c++17")
       endif()
 
+      if(APPLE)
+         list(APPEND _plugin_flags "-Wl,-undefined,dynamic_lookup")
+      endif()
       set(_plugin_flags_base "${_plugin_flags}")
       set(_abi_candidates "0;1")
       set(_panda_abi_symbol_cxx11_declname
