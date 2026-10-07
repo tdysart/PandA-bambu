@@ -347,7 +347,13 @@ add_test(NAME libbambu_unit COMMAND libbambu_unit)
 if(APPLE)
    set(PANDA_WHOLE_ARCHIVE_HDL_GENERATORS "-Wl,-force_load,$<TARGET_FILE:panda_hdl_generators>")
    set(PANDA_ORIGIN_RPATH "@executable_path")
+   # -force_load names the archive but does not order the build; declare it.
+   function(panda_depend_on_hdl_generators tgt)
+      add_dependencies(${tgt} panda_hdl_generators)
+   endfunction()
 else()
+   function(panda_depend_on_hdl_generators tgt)
+   endfunction()
    set(PANDA_WHOLE_ARCHIVE_HDL_GENERATORS "-Wl,--whole-archive" panda_hdl_generators "-Wl,--no-whole-archive")
    set(PANDA_ORIGIN_RPATH "\$ORIGIN")
 endif()
@@ -359,6 +365,7 @@ if(PANDA_BUILD_BAMBU)
       Parameter.cpp
       global_variables.cpp
    )
+   panda_depend_on_hdl_generators(bambu)
    target_link_libraries(bambu PRIVATE
       ${PANDA_WHOLE_ARCHIVE_HDL_GENERATORS}
       panda_core
@@ -386,6 +393,7 @@ if(PANDA_BUILD_EUCALYPTUS)
       Parameter.cpp
       global_variables.cpp
    )
+   panda_depend_on_hdl_generators(eucalyptus)
    target_link_libraries(eucalyptus PRIVATE
       ${PANDA_WHOLE_ARCHIVE_HDL_GENERATORS}
       panda_core
@@ -413,6 +421,7 @@ if(PANDA_BUILD_CC)
       Parameter.cpp
       global_variables.cpp
    )
+   panda_depend_on_hdl_generators(bambu-cc)
    target_link_libraries(bambu-cc PRIVATE
       ${PANDA_WHOLE_ARCHIVE_HDL_GENERATORS}
       panda_core

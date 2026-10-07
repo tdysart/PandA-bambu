@@ -194,10 +194,23 @@ function(_bambu_cc_objects out_list arch_label arch_flag cflags sources)
    set(${out_list} ${${out_list}} PARENT_SCOPE)
 endfunction()
 
+# The objects are LLVM bitcode, which Apple's ar/ranlib silently drop from
+# archives (they only keep Mach-O members); use the detected clang's llvm-ar.
+set(_panda_ar "${CMAKE_AR}")
+set(_panda_ranlib "${CMAKE_RANLIB}")
+if(APPLE AND PANDA_CLANG${_libbambu_choice}_EXE)
+   get_filename_component(_panda_clang_bindir "${PANDA_CLANG${_libbambu_choice}_EXE}" DIRECTORY)
+   if(EXISTS "${_panda_clang_bindir}/llvm-ar" AND EXISTS "${_panda_clang_bindir}/llvm-ranlib")
+      set(_panda_ar "${_panda_clang_bindir}/llvm-ar")
+      set(_panda_ranlib "${_panda_clang_bindir}/llvm-ranlib")
+   endif()
+endif()
+
 function(_panda_archive lib_path objects)
    add_custom_command(OUTPUT "${lib_path}"
-      COMMAND "${CMAKE_AR}" qc "${lib_path}" ${objects}
-      COMMAND "${CMAKE_RANLIB}" "${lib_path}"
+      COMMAND "${CMAKE_COMMAND}" -E remove -f "${lib_path}"
+      COMMAND "${_panda_ar}" qc "${lib_path}" ${objects}
+      COMMAND "${_panda_ranlib}" "${lib_path}"
       DEPENDS ${objects}
       VERBATIM
    )
