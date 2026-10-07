@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<module>
+  <function dataflow_top="1" inline="off" name="forward" symbol="forward">
+    <bundles>
+      <bundle mode="array" name="arg0"></bundle>
+      <bundle mode="array" name="arg1"></bundle>
+      <bundle mode="array" name="arg2"></bundle>
+      <bundle mode="array" name="arg3"></bundle>
+    </bundles>
+    <parameters>
+      <parameter array_dims="8,6" bundle="arg0" elem_count="48" index="0" original_typename="float (*)[6]" port="P0" size_in_bytes="192" typename="float*"></parameter>
+      <parameter array_dims="6,4" bundle="arg1" elem_count="24" index="1" original_typename="float (*)[4]" port="P1" size_in_bytes="96" typename="float*"></parameter>
+      <parameter array_dims="8,4" bundle="arg2" elem_count="32" index="2" original_typename="float (*)[4]" port="P2" size_in_bytes="128" typename="float*"></parameter>
+      <parameter array_dims="8,4" bundle="arg3" elem_count="32" index="3" original_typename="float (*)[4]" port="P3" size_in_bytes="128" typename="float*"></parameter>
+    </parameters>
+  </function>
+  <function dataflow_module="1" inline="off" name="node2" symbol="node2">
+    <bundles>
+      <bundle mode="array" name="arg0"></bundle>
+      <bundle mode="array" name="arg1"></bundle>
+      <bundle depth="32" mode="fifo" name="fifo_1"></bundle>
+      <bundle mode="default" name="node2_P3"></bundle>
+    </bundles>
+    <parameters>
+      <parameter array_dims="8,6" bundle="arg0" elem_count="48" index="0" original_typename="float (*)[6]" port="P0" size_in_bytes="192" typename="float*"></parameter>
+      <parameter array_dims="6,4" bundle="arg1" elem_count="24" index="1" original_typename="float (*)[4]" port="P1" size_in_bytes="96" typename="float*"></parameter>
+      <parameter bundle="fifo_1" includes="@PANDA_INCLUDE@/ac_channel.h" index="2" original_typename="ac_channel&lt;float&gt;&amp;" port="P2" size_in_bytes="4" typename="ac_channel&lt;float&gt;&amp;"></parameter>
+      <parameter bundle="node2_P3" index="3" original_typename="float" port="P3" size_in_bytes="4" typename="float"></parameter>
+    </parameters>
+  </function>
+  <function dataflow_module="1" inline="off" name="node1" symbol="node1">
+    <bundles>
+      <bundle depth="32" mode="fifo" name="fifo_1"></bundle>
+      <bundle mode="array" name="arg2"></bundle>
+      <bundle depth="32" mode="fifo" name="fifo_0"></bundle>
+      <bundle mode="default" name="node1_P3"></bundle>
+      <bundle mode="default" name="node1_P4"></bundle>
+    </bundles>
+    <parameters>
+      <parameter bundle="fifo_1" includes="@PANDA_INCLUDE@/ac_channel.h" index="0" original_typename="ac_channel&lt;float&gt;&amp;" port="P0" size_in_bytes="4" typename="ac_channel&lt;float&gt;&amp;"></parameter>
+      <parameter array_dims="8,4" bundle="arg2" elem_count="32" index="1" original_typename="float (*)[4]" port="P1" size_in_bytes="128" typename="float*"></parameter>
+      <parameter bundle="fifo_0" includes="@PANDA_INCLUDE@/ac_channel.h" index="2" original_typename="ac_channel&lt;float&gt;&amp;" port="P2" size_in_bytes="4" typename="ac_channel&lt;float&gt;&amp;"></parameter>
+      <parameter bundle="node1_P3" index="3" original_typename="double" port="P3" size_in_bytes="8" typename="double"></parameter>
+      <parameter bundle="node1_P4" index="4" original_typename="float" port="P4" size_in_bytes="4" typename="float"></parameter>
+    </parameters>
+  </function>
+  <function dataflow_module="1" inline="off" name="node0" symbol="node0">
+    <bundles>
+      <bundle depth="32" mode="fifo" name="fifo_0"></bundle>
+      <bundle mode="array" name="arg3"></bundle>
+    </bundles>
+    <parameters>
+      <parameter bundle="fifo_0" includes="@PANDA_INCLUDE@/ac_channel.h" index="0" original_typename="ac_channel&lt;float&gt;&amp;" port="P0" size_in_bytes="4" typename="ac_channel&lt;float&gt;&amp;"></parameter>
+      <parameter array_dims="8,4" bundle="arg3" elem_count="32" index="1" original_typename="float (*)[4]" port="P1" size_in_bytes="128" typename="float*"></parameter>
+    </parameters>
+  </function>
+</module>

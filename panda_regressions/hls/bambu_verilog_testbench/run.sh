@@ -5,7 +5,8 @@
 #
 # For each testbench: synthesize, run it natively to record the memory images, replay them in
 # the Verilated Verilog testbench, and check the reported mismatches and cycle counts. Then
-# corrupt one expected word and check that the failure is detected.
+# corrupt one expected word and check that the failure is detected. The dataflow case
+# synthesizes the soda-plugins `forward` design (FIFOs between three nodes).
 #
 # Needs a dev/panda Bambu install, Verilator, and a clang matching the install's compiler
 # (--compiler). On macOS also Homebrew coreutils and gawk: the generated backend scripts use
@@ -29,15 +30,28 @@ check() { # description, command...
   if "$@"; then echo "  ok   $what"; else echo "  FAIL $what"; fail=1; fi
 }
 
-run_case() { # name, expected runs
-  local name="$1" runs="$2" dir="$WORK/$1"
+run_case() { # name, expected runs, kind (c | dataflow)
+  local name="$1" runs="$2" kind="${3:-c}" dir="$WORK/$1"
   rm -rf "$dir"; mkdir -p "$dir"; cd "$dir"
-  cp "$HERE/$name.c" k.c
   echo "== $name"
-  bambu -m64 k.c --top-fname=vadd --compiler="$COMPILER" --device-name=nangate45 \
-    --clock-period=5 --simulate --simulator=VERILATOR --testbench-style=verilog \
-    --generate-interface=INFER --generate-tb=k.c > bambu.log 2>&1
-  local rc=$?
+  local rc
+  if [ "$kind" = dataflow ]; then
+    # LLVM IR from the soda-plugins backend plus its architecture XML; the testbench's own
+    # `forward` is the reference model.
+    cp "$HERE/dataflow_forward/forward.ll" "$HERE/dataflow_forward/forward_tb.c" .
+    sed "s#@PANDA_INCLUDE@#$I/include/panda#g" "$HERE/dataflow_forward/architecture.xml.in" > architecture.xml
+    bambu -m64 forward.ll --top-fname=forward --architecture-xml=architecture.xml \
+      --compiler="$COMPILER" --device-name=nangate45 --clock-period=5 --simulate \
+      --simulator=VERILATOR --testbench-style=verilog --generate-interface=INFER \
+      --generate-tb=forward_tb.c > bambu.log 2>&1
+    rc=$?
+  else
+    cp "$HERE/$name.c" k.c
+    bambu -m64 k.c --top-fname=vadd --compiler="$COMPILER" --device-name=nangate45 \
+      --clock-period=5 --simulate --simulator=VERILATOR --testbench-style=verilog \
+      --generate-interface=INFER --generate-tb=k.c > bambu.log 2>&1
+    rc=$?
+  fi
   local B=HLS_output/simulation/verilator_verilog_backend
   check "bambu exits 0" test $rc -eq 0
   check "$runs run(s) replayed, no mismatches" \
@@ -55,5 +69,6 @@ run_case() { # name, expected runs
 
 run_case vadd 1
 run_case vadd_multi 3
+run_case dataflow_forward 1 dataflow
 echo "work dir: $WORK"
 exit $fail

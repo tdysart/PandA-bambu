@@ -159,7 +159,21 @@ How it works (backend `etc/libtech/backend/simulation/verilator_verilog/`):
    `Evaluation` step reports cycles and executions.
 
 Regression: `panda_regressions/hls/bambu_verilog_testbench/run.sh [install_dir]` (single run,
-three runs with a dependent call, and an injected mismatch for each).
+three runs with a dependent call, the soda-plugins dataflow `forward` design, and an injected
+mismatch for each).
+
+### Dataflow designs from LLVM IR
+
+The soda-plugins `forward` design (three nodes joined by FIFOs, `D = 0.5*(A*B) + 0.1f*C`) runs
+in this testbench: 1849 cycles, all 32 output words bit-exact against the reference model, and a
+one-ulp corruption of the expected image is detected. Notes:
+
+- The design has no C source, so when every source is LLVM IR, `launch.sh` uses the testbench
+  file's own definition of the top function as the reference model (the IR cannot run natively:
+  its `ac_channel` seams only exist in hardware).
+- The plugin must be told the word size of the machine it targets: use
+  `machine-bits=64` with `bambu -m64`. Its default, `-m32`, has no sysroot on arm64 macOS.
+- Pass `--generate-interface=INFER` as for any dataflow design.
 
 Not supported yet (the capture step stops with a clear error where it can tell):
 

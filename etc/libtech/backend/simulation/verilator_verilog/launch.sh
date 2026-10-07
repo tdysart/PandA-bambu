@@ -52,9 +52,22 @@ TB_SRCS="$(bambu_results /application/testbench/file)"
 # weak lets the wrapper win at link time without ELF-only objcopy.
 printf '#pragma weak %s\n' "${TOP}" > "${CAP_DIR}/weak_top.h"
 
+# The reference implementation is the design's own source, with the top function renamed to
+# its gold name and any main renamed away. When the design comes from LLVM IR there is no C
+# to run natively (and, for a dataflow design, no host ac_channel), so the testbench file's
+# own definition of the top function is the reference model instead.
+GOLD_SRCS=""
+for src in ${SRCS}; do
+  case "${src}" in *.ll|*.bc) ;; *) GOLD_SRCS+=" ${src}" ;; esac
+done
+if [ -z "${GOLD_SRCS}" ]; then
+  echo "Sim: Design sources are LLVM IR: the testbench's '${TOP}' is the reference model"
+  GOLD_SRCS="${TB_SRCS}"
+fi
+
 OBJS=()
 i=0
-for src in ${SRCS}; do   # reference implementation: top renamed, any main renamed away
+for src in ${GOLD_SRCS}; do
   obj="${CAP_DIR}/gold_${i}.o"; i=$((i+1))
   ${CC} ${CFLAGS} -D${TOP}=${MTOP} -Dmain=__m_gold_main_${i} -c "${src}" -o "${obj}"
   OBJS+=("${obj}")
