@@ -61,7 +61,8 @@ run_case() { # name, expected runs, kind (c | dataflow)
 
   # Corrupt the first expected word of the last run and replay: must fail.
   local last=$((runs - 1))
-  awk -v r="$last" '!done && $1==r {$4="00ff00ff"; done=1} {print}' tb_expected.mem > t && mv t tb_expected.mem
+  # corrupt the first record of the last run, whichever kind (w: word data, m: byte data)
+  awk -v r="$last" '!done && $2==r {$NF = ($1=="m") ? "ff" substr($NF, 3) : "00ff00ff"; done=1} {print}' tb_expected.mem > t && mv t tb_expected.mem
   ./"$B"/work/Vbambu_testbench > bad.log 2>&1
   check "corrupted expectation is reported" grep -q "MISMATCH run=$last" bad.log
   check "failure return code is 1" grep -q '^1$' bambu_time_simulation.txt
@@ -69,6 +70,7 @@ run_case() { # name, expected runs, kind (c | dataflow)
 
 run_case vadd 1
 run_case vadd_multi 3
+run_case vadd_axi 2
 run_case dataflow_forward 1 dataflow
 echo "work dir: $WORK"
 exit $fail

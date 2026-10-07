@@ -181,10 +181,21 @@ one-ulp corruption of the expected image is detected. Notes:
   `machine-bits=64` with `bambu -m64`. Its default, `-m32`, has no sysroot on arm64 macOS.
 - Pass `--generate-interface=INFER` as for any dataflow design.
 
+`m_axi` pointer parameters work too: the capture maps each host buffer at a device address
+(as the wrapper's `__m_memmap` does), records the address as the pointer port's value and the
+buffer in a byte-addressed memory, and the shim serves reads and writes of any width at any byte
+address (little endian). The 3mm example (seven `m_axi` buffers, 26322 cycles) runs this way.
+A testbench with `void*` parameters must say how big the buffers are with `m_param_alloc`, as it
+does for the MDPI flow. The image files hold `w` records (element-addressed words and scalar
+ports) and `m` records (byte-addressed memory); see `capture/include/mdpi/mdpi_wrapper.h`.
+
+`dev/panda` reads interface pragmas in the form `#pragma HLS interface port=P0 mode=m_axi
+offset=direct bundle=gmem0`; the older `#pragma HLS_interface P0 m_axi direct` is ignored, and
+`-lm`, `--soft-float`, `--verilator-parallel` and `-v3` are no longer options.
+
 Not supported yet (the capture step stops with a clear error where it can tell):
 
-- Byte-addressed external memory (`TestbenchMEMMinimal`) and internal memory-mapped variables
-  (global arrays initialised through `memmap_init`); partial-width writes.
+- Internal memory-mapped variables (global arrays initialised through `memmap_init`).
 - FIFO/AXIS, channel, m_axi and banked interfaces on the top function, and return values.
   (FIFOs between dataflow modules inside the design are hardware and are not affected.)
 - XML test-vector input (`--generate-tb=<xml>`) has not been tried; it goes through the same
