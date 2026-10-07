@@ -325,6 +325,8 @@ localparam [6:0]
 reg [$bits(STATE_READY)-1:0] state, state_next, state_succ, state_succ_next;
 
 reg rst, rst_next, setup, setup_next, start, start_next;
+// $finish only raises a flag in some simulators (Verilator): keep the final actions to one pass
+reg sim_ended = 0;
 integer rst_count, rst_count_next;
 time over_time;
 
@@ -422,9 +424,11 @@ begin
       `endif
     end
   STATE_END:
+    if(!sim_ended)
     begin
       automatic integer r = m_fini();
       automatic integer res_file;
+      sim_ended = 1;
       res_file = $fopen(RESFILE, &quot;a&quot;);
       $fwrite(res_file, &quot;\n%0d\n&quot;, r[15:8]);
       $fclose(res_file);
@@ -432,9 +436,11 @@ begin
       $finish;
     end
   STATE_ABORT:
+    if(!sim_ended)
     begin
       automatic integer r = m_fini();
       automatic integer res_file;
+      sim_ended = 1;
       res_file = $fopen(RESFILE, &quot;a&quot;);
       $fwrite(res_file, &quot;\nA\n&quot;);
       $fclose(res_file);

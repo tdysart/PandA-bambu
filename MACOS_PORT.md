@@ -158,6 +158,12 @@ How it works (backend `etc/libtech/backend/simulation/verilator_verilog/`):
 3. **Results.** `bambu_time_simulation.txt` is converted to `bambu_results.xml`, so the stock
    `Evaluation` step reports cycles and executions.
 
+Under verilator-sst: the generated `bambu_testbench.v` has a single `clock` port, so it runs as
+a verilator-sst custom module (`scripts/verilator_sst_devpanda_tb.sh` in soda-benchmarks). The
+dataflow `forward` design takes 1849 cycles there as well, identical to the native run. The
+final block of `TestbenchFSM` runs once (`sim_ended`), because `$finish` only raises a flag
+under Verilator and SST keeps clocking after it.
+
 Regression: `panda_regressions/hls/bambu_verilog_testbench/run.sh [install_dir]` (single run,
 three runs with a dependent call, the soda-plugins dataflow `forward` design, and an injected
 mismatch for each).
