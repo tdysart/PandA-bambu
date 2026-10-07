@@ -11,10 +11,17 @@
 #######################################################################
 set -e
 
-sim_elapsed_time=$(date +%s.%N)
+# BSD date has no %N; fall back to whole seconds there.
+function sim_now {
+  local t
+  t=$(date +%s.%N)
+  case "$t" in *N*) t=$(date +%s) ;; esac
+  echo "$t"
+}
+sim_elapsed_time=$(sim_now)
 function exit_time {
   local now et
-  now=$(date +%s.%N)
+  now=$(sim_now)
   et=$(awk -v start="$sim_elapsed_time" -v now="$now" 'BEGIN {printf "%.6f", now - start}')
   echo "Sim: Elapsed time: $et"
 }
@@ -24,7 +31,9 @@ trap exit_time EXIT
 
 CC="$(bambu_results /application/sources@compiler)"
 CFLAGS=`echo $(bambu_results /application/sources@cflags) | envsubst`
-CFLAGS+=" -fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing"
+CFLAGS+=" -fwrapv -flax-vector-conversions -fno-strict-aliasing"
+# -msse2 only exists on x86 targets (not arm64 hosts).
+case "$(uname -m)" in x86_64|i?86|amd64) CFLAGS+=" -msse2" ;; esac
 CFLAGS+=" -D__builtin_bambu_time_start\(\)= -D__builtin_bambu_time_stop\(\)= -D__BAMBU_SIM__"
 
 case "${CFLAGS}" in

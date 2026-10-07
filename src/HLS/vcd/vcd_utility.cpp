@@ -314,8 +314,12 @@ void vcd_utility::GenerateDiscrepancyTrace() const
            CompilerWrapper_OptimizationSet::O2;
    const CompilerWrapper compiler_wrapper(parameters, default_compiler, opt_set);
 
-   std::string compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -fno-strict-aliasing "
+   std::string compiler_flags = "-fwrapv -flax-vector-conversions -fno-strict-aliasing "
                                 "-D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+#if defined(__x86_64__) || defined(__i386__)
+   // -msse2 only exists on x86 hosts
+   compiler_flags += "-msse2 ";
+#endif
 
    if(parameters->isOption(OPT_tb_extra_cc_options))
    {
