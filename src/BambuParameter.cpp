@@ -170,7 +170,8 @@
 #define OPT_TESTBENCH_ARGV (1 + OPT_TESTBENCH)
 #define OPT_TESTBENCH_PARAM_SIZE (1 + OPT_TESTBENCH_ARGV)
 #define OPT_TESTBENCH_MAP_MODE (1 + OPT_TESTBENCH_PARAM_SIZE)
-#define OPT_TB_EXTRA_CC_OPTIONS (1 + OPT_TESTBENCH_MAP_MODE)
+#define OPT_TESTBENCH_STYLE (1 + OPT_TESTBENCH_MAP_MODE)
+#define OPT_TB_EXTRA_CC_OPTIONS (1 + OPT_TESTBENCH_STYLE)
 #define OPT_TIME_WEIGHT (1 + OPT_TB_EXTRA_CC_OPTIONS)
 #define OPT_TIMING_MODEL (1 + OPT_TIME_WEIGHT)
 #define OPT_TIMING_VIOLATION (1 + OPT_TIMING_MODEL)
@@ -240,6 +241,13 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "            DEVICE - Emulate host/device memory mapping (default)\n"
       << "            SHARED - Emulate shared memory space between host and device\n"
       << "                     (BEAWARE: no memory integrity checks in shared mode)\n\n"
+      << "    --testbench-style=<arg>\n"
+      << "        Simulation testbench style:\n"
+      << "            mdpi    - Drive the simulation from the C testbench through the MDPI/DPI\n"
+      << "                      host interface (default)\n"
+      << "            verilog - Self-contained Verilog testbench: the C testbench is run natively\n"
+      << "                      to record the memory images and the reference results, and the\n"
+      << "                      simulation replays them with no DPI host (Verilator only)\n\n"
       << "    --top-fname=<fun_name>\n"
       << "        Define the top function to be synthesized. (default=main)\n\n"
       << "    --top-rtldesign-name=<top_name>\n"
@@ -966,6 +974,7 @@ int BambuParameter::Exec()
       {"tb-arg", required_argument, nullptr, OPT_TESTBENCH_ARGV},
       {"tb-param-size", required_argument, nullptr, OPT_TESTBENCH_PARAM_SIZE},
       {"tb-memory-mapping", required_argument, nullptr, OPT_TESTBENCH_MAP_MODE},
+      {"testbench-style", required_argument, nullptr, OPT_TESTBENCH_STYLE},
       {"tb-extra-cc-options", required_argument, nullptr, OPT_TB_EXTRA_CC_OPTIONS},
       {"max-sim-cycles", required_argument, nullptr, OPT_MAX_SIM_CYCLES},
       {"generate-vcd", no_argument, nullptr, OPT_GENERATE_VCD},
@@ -1662,6 +1671,17 @@ int BambuParameter::Exec()
                                  "'. Supported values are: DEVICE, SHARED.");
             }
             setOption(OPT_testbench_map_mode, map_mode);
+            break;
+         }
+         case OPT_TESTBENCH_STYLE:
+         {
+            const std::string style(optarg);
+            if(style != "mdpi" && style != "verilog")
+            {
+               THROW_ERROR_USAGE("BadParameters: invalid --testbench-style value '" + style +
+                                 "'. Supported values are: mdpi, verilog.");
+            }
+            setOption(OPT_testbench_style, style);
             break;
          }
          case OPT_TB_EXTRA_CC_OPTIONS:
@@ -2664,6 +2684,14 @@ void BambuParameter::CheckParameters()
       auto simulator = getOption<std::string>(OPT_simulator);
       std::transform(simulator.begin(), simulator.end(), simulator.begin(),
                      [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
+      if(getOption<std::string>(OPT_testbench_style) == "verilog")
+      {
+         if(simulator != "verilator")
+         {
+            THROW_ERROR_USAGE("BadParameters: --testbench-style=verilog requires --simulator=VERILATOR.");
+         }
+         simulator += "_verilog";
+      }
       boost::replace_all(backend_pipeline, "<simulation>", "simulation/" + simulator);
       setOption(OPT_backend_pipeline, backend_pipeline);
    }
@@ -3469,6 +3497,7 @@ void BambuParameter::SetDefaults()
 
    /// ---------- Simulation options ----------- //
    setOption(OPT_testbench_map_mode, "DEVICE");
+   setOption(OPT_testbench_style, "mdpi");
 
    SetPandaParameter("CSE_size", "2");
    SetPandaParameter("MAX_LUT_INT_SIZE", "8");

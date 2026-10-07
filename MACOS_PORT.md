@@ -129,12 +129,46 @@ would have to be redone against the rewritten `etc/libmdpi`.
 - Port the Darwin changes from the autotools branch's libmdpi onto `etc/libmdpi`.
 - Make the generated scripts portable (`readlink -e`, gawk-only `xmlq`) instead of shimming.
 
-## Next: the pure-Verilog testbench
+## Pure-Verilog testbench: `--testbench-style=verilog`
 
-Add `--testbench-style=verilog` as another HDL testbench step alongside
-`HDLTestbenchGeneration`, reusing the generator logic from
-`feature/legacy-xml-testbench` (`verilog_testbench_*`). That path needs no libmdpi. The
-2024-era simulation classes it was built on (`SimulationTool`,
-`generate_simulation_scripts`, `compute_reserved_memory`, `memory_initialization_writer*`)
-were deleted by upstream's refactor (#388), so it has to be rewired to the `evaluation`
-step and the new IR helper names, not applied as a patch.
+Status: working for array and scalar-port interfaces with `--simulator=VERILATOR`, including
+several calls of the top function in one testbench. No libmdpi, no host process, no ELF
+tooling, so it runs on macOS.
+
+```bash
+bambu -m64 k.c --top-fname=vadd --compiler=I386_CLANG19 --device-name=nangate45 --clock-period=5 \
+  --simulate --simulator=VERILATOR --testbench-style=verilog --generate-interface=INFER --generate-tb=k.c
+```
+
+How it works (backend `etc/libtech/backend/simulation/verilator_verilog/`):
+
+1. **Capture.** `launch.sh` compiles the user's testbench with a capture runtime
+   (`capture/include/mdpi/mdpi_wrapper.h`) in place of libmdpi, and links it with the generated
+   `mdpi_wrapper.cpp`, the reference (gold) build of the sources, and the testbench. It runs
+   natively. At each call of the top function the wrapper records the input memory in
+   `tb_init.mem` and, after the reference run, the output in `tb_expected.mem`
+   (`<run> <interface id> <element address> <data>`). The reference result is also copied back
+   into the host arrays, so the testbench's own checks and calls that depend on earlier results
+   see correct data. The top function in the testbench is made weak with `#pragma weak`, which
+   replaces the ELF `objcopy` weakening that Mach-O cannot do.
+2. **Simulate.** The generated `bambu_testbench.v` is verilated with `BAMBU_TB_VERILOG`, which
+   makes the library components import `tb_shim_pkg` (an in-simulation memory) instead of the
+   five DPI functions (`NC_TESTBENCH_IPs.xml`). Before each run the shim loads that run's input
+   image, after it checks the run against the expected image.
+3. **Results.** `bambu_time_simulation.txt` is converted to `bambu_results.xml`, so the stock
+   `Evaluation` step reports cycles and executions.
+
+Regression: `panda_regressions/hls/bambu_verilog_testbench/run.sh [install_dir]` (single run,
+three runs with a dependent call, and an injected mismatch for each).
+
+Not supported yet (the capture step stops with a clear error where it can tell):
+
+- Byte-addressed external memory (`TestbenchMEMMinimal`) and internal memory-mapped variables
+  (global arrays initialised through `memmap_init`); partial-width writes.
+- FIFO/AXIS, channel, m_axi and banked interfaces on the top function, and return values.
+  (FIFOs between dataflow modules inside the design are hardware and are not affected.)
+- XML test-vector input (`--generate-tb=<xml>`) has not been tried; it goes through the same
+  generated wrapper, so it should work.
+- Simulators other than Verilator.
+- The shim keeps its images in associative arrays and scans them per run, which is fine for
+  small kernels but will be slow for large memories.

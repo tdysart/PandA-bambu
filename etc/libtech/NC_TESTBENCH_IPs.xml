@@ -153,9 +153,15 @@ endgenerate"/>
           <parameter name="ID">0</parameter>
           <parameter name="BITSIZE_data">32</parameter>
           <NP_functionality LIBRARY="if_utils ID BITSIZE_data" VERILOG_PROVIDED="
+`ifdef BAMBU_TB_VERILOG
+import tb_shim_pkg::m_read;
+import tb_shim_pkg::m_write;
+import tb_shim_pkg::m_state;
+`else
 import &quot;DPI-C&quot; function int m_read (input shortint unsigned id, output logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte signed cmd);
 import &quot;DPI-C&quot; function int m_write (input shortint unsigned id, input logic [4095:0] data, input shortint unsigned bitsize, input ptr_t addr, input byte signed cmd);
 import &quot;DPI-C&quot; function int m_state (input shortint unsigned id, input int data);
+`endif
 
 function automatic integer log2;
   input integer value;
@@ -300,8 +306,13 @@ timeunit 1ps;
 timeprecision 1ps;
 `endif
 
+`ifdef BAMBU_TB_VERILOG
+import tb_shim_pkg::m_next;
+import tb_shim_pkg::m_fini;
+`else
 import &quot;DPI-C&quot; function int unsigned m_next(input int unsigned state);
 import &quot;DPI-C&quot; function int m_fini();
+`endif
 
 localparam [6:0] 
   STATE_READY   =7&apos;b0000001,
