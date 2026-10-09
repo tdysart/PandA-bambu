@@ -62,14 +62,19 @@ head -n${base_tech_body} "${base_file}" > "${output_file}"
 for lib_xml in "$@"; do
     lib_start=$(( `find_tech_start ${lib_xml}` + 1 ))
     lib_end=`find_tech_end ${lib_xml}`
-    line_count=`wc -l ${lib_xml}|cut -f1 -d' '`
+    # BSD wc pads its count with spaces, so read from stdin and strip them.
+    line_count=`wc -l < "${lib_xml}" | tr -d ' '`
     pad_newline=`if [[ $(tail -c1 "${lib_xml}") == "" ]]; then echo "0"; else echo "1"; fi`
     lib_rem=$(( ${line_count} - ${lib_end} + ${pad_newline} + 1 ))
 
     # Insert <technology> tag contents from lib_xml file
     # Portable replacement for `head -n-N` (BSD head rejects negative counts).
-    keep=$(( ${line_count} - ${lib_start} + 1 - ${lib_rem} ))
-    tail -n +${lib_start} "${lib_xml}"|head -n ${keep} >> "${output_file}"
+    # tail prints line_count + pad_newline lines (a last line without a newline is not counted by wc).
+    keep=$(( ${line_count} + ${pad_newline} - ${lib_start} + 1 - ${lib_rem} ))
+    # BSD head rejects a count of 0, so skip the copy when nothing is kept.
+    if [ ${keep} -gt 0 ]; then
+      tail -n +${lib_start} "${lib_xml}"|head -n ${keep} >> "${output_file}"
+    fi
 done
 
 # Copy base file reminder
