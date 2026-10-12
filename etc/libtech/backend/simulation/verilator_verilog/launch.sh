@@ -60,9 +60,24 @@ GOLD_SRCS=""
 for src in ${SRCS}; do
   case "${src}" in *.ll|*.bc) ;; *) GOLD_SRCS+=" ${src}" ;; esac
 done
+IR_GOLD_SRCS=""
 if [ -z "${GOLD_SRCS}" ]; then
-  echo "Sim: Design sources are LLVM IR: the testbench's '${TOP}' is the reference model"
-  GOLD_SRCS="${TB_SRCS}"
+  # Does the testbench file define the top function itself?
+  TB_DEFINES_TOP=0
+  j=0
+  for src in ${TB_SRCS}; do
+    j=$((j+1))
+    ${CC} ${CFLAGS} ${TB_CFLAGS} -c "${src}" -o "${CAP_DIR}/probe_${j}.o"
+    if nm "${CAP_DIR}/probe_${j}.o" | grep -Eq " [TW] _?${TOP}\$"; then TB_DEFINES_TOP=1; fi
+  done
+  if [ "${TB_DEFINES_TOP}" = 1 ]; then
+    echo "Sim: Design sources are LLVM IR: the testbench's '${TOP}' is the reference model"
+    GOLD_SRCS="${TB_SRCS}"
+  else
+    # Nothing else to compare with: the IR itself, compiled natively, is the reference model.
+    echo "Sim: Design sources are LLVM IR and the testbench does not define '${TOP}': the IR is the reference model"
+    IR_GOLD_SRCS="${SRCS}"
+  fi
 fi
 
 OBJS=()
@@ -70,6 +85,12 @@ i=0
 for src in ${GOLD_SRCS}; do
   obj="${CAP_DIR}/gold_${i}.o"; i=$((i+1))
   ${CC} ${CFLAGS} -D${TOP}=${MTOP} -Dmain=__m_gold_main_${i} -c "${src}" -o "${obj}"
+  OBJS+=("${obj}")
+done
+for src in ${IR_GOLD_SRCS}; do
+  obj="${CAP_DIR}/gold_${i}.o"; ir="${CAP_DIR}/gold_${i}.ll"; i=$((i+1))
+  sed -E "s/@${TOP}([^A-Za-z0-9_.])/@${MTOP}\1/g" "${src}" > "${ir}"
+  ${CC} -Wno-override-module -x ir -c "${ir}" -o "${obj}"
   OBJS+=("${obj}")
 done
 for src in ${TB_SRCS}; do   # user testbench: calls the top function

@@ -79,6 +79,7 @@ typedef struct
    ptr_t dev;
    const void* host;
    size_t bytes;
+   int dumped;
 } __m_region_t;
 static __m_region_t __m_regions[__M_MAX_REGIONS];
 static size_t __m_region_count = 0;
@@ -93,6 +94,7 @@ static inline int __m_memmap(ptr_t dst, void* src, size_t bytes)
    __m_regions[__m_region_count].dev = dst;
    __m_regions[__m_region_count].host = src;
    __m_regions[__m_region_count].bytes = bytes;
+   __m_regions[__m_region_count].dumped = 0;
    ++__m_region_count;
    return 0;
 }
@@ -192,6 +194,7 @@ static inline void __m_capture_ptr(unsigned idx, const void* host, unsigned mem_
          __m_if_dev[idx] = dev;
          __m_if_bytes[idx] = bytes;
          __m_if_mem_id[idx] = mem_id;
+         __m_regions[r].dumped = 1;
          // the pointer port holds the device address
          fprintf(__m_image(&__m_init_file, "tb_init.mem"), "w %zu %u 0 %" PRIx64 "\n", __m_call_count, idx,
                  (uint64_t)dev);
@@ -285,6 +288,22 @@ static inline void __m_capture_ptr(unsigned idx, const void* host, unsigned mem_
    } while(0)
 #define m_channelcmp(...) __m_unsupported("channel interface")
 #define m_retvalcmp(...) __m_unsupported("return value")
-#define m_call_next(...) ++__m_call_count
+// Memory-mapped internal variables (constants such as weights, initialized globals) are mapped by
+// the wrapper like the pointer parameters but belong to no parameter: write what is left over, so
+// the testbench's memory starts with them.
+static inline void __m_dump_internal_regions(unsigned mem_id)
+{
+   size_t r;
+   for(r = 0; r < __m_region_count; ++r)
+   {
+      if(!__m_regions[r].dumped)
+      {
+         __m_dump_bytes(__m_image(&__m_init_file, "tb_init.mem"), mem_id, __m_regions[r].dev, __m_regions[r].host,
+                        __m_regions[r].bytes);
+         __m_regions[r].dumped = 1;
+      }
+   }
+}
+#define m_call_next(...) (__m_dump_internal_regions(__mem_bambu_artificial_idx), ++__m_call_count)
 
 #endif // BAMBU_VERILOG_CAPTURE_WRAPPER_H
