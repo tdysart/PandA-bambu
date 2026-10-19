@@ -6,13 +6,16 @@ Status notes for the `spike/devpanda-macos-testbench` branch, which builds upstr
 ## Why this branch exists
 
 - `upstream/main` has not moved since April 2025; all development is on `dev/panda`.
-- The soda-plugins dataflow lowering needs two things only `dev/panda` has: the
+- The soda-plugins dataflow lowering (the plugins are in soda-benchmarks, under
+  `examples/soda-plugins`) needs two things only `dev/panda` has: the
   `array_dims` parameter attribute in `--architecture-xml`, and the unified
   `ac_channel.h` (channel accesses are `_read_bambu_internal` / `_write_bambu_internal`,
   no nested `fifo` class).
 - `dev/panda` replaced autotools with CMake and removed the C++ simulation framework, so the
   macOS/autotools work and the `--testbench-style=verilog` port on
-  `feature/legacy-xml-testbench` do not carry over directly.
+  `feature/legacy-xml-testbench` do not carry over directly. That branch is the earlier
+  pure-Verilog testbench port, on the autotools tree (upstream `main` plus the macOS commits);
+  `legacy-xml` was this style's old name. The spike redid it on the CMake tree.
 
 ## What works
 
@@ -39,9 +42,15 @@ ninja -C build19 && cmake --install build19
 - Use Apple clang, not Homebrew GCC. The clang plugins are loaded into the clang that
   Bambu invokes, so they must use the same C++ library (libc++); GCC's libstdc++ is
   ABI-incompatible with it.
-- `~/SODA-OPT/llvm` cannot be used: it is MLIR-only, static, RTTI off, and has no clang.
-- Clang 16 cannot read the LLVM 19 IR that soda-opt produces (opaque pointers), so the
-  clang Bambu uses must be the same major version as the LLVM that produced the IR.
+- `~/SODA-OPT/llvm` (LLVM 19.1.5, the version soda-opt pins; see its README) cannot be used: it
+  is MLIR-only, static, has no clang, and has RTTI off. RTTI (run-time type information, the
+  C++ support behind `dynamic_cast` and `typeid`) is needed by Bambu's clang plugins, whose
+  classes derive from LLVM's, and LLVM is built without it by default.
+- Use clang 19, the same major version as the LLVM that produced the IR. Clang 16 is where this
+  came from: it is the newest clang the earlier autotools Bambu supports (`I386_CLANG16` is the
+  last compiler it knows; Homebrew `llvm@16`), so that was the clang used before `dev/panda`.
+  LLVM does not promise that an older version reads newer IR, and soda-opt's LLVM 19 IR can use
+  syntax that clang 16 does not know, so `dev/panda` uses clang 19 (`I386_CLANG19`).
 
 ### Running Bambu from the install
 
@@ -130,6 +139,10 @@ would have to be redone against the rewritten `etc/libmdpi`.
 - Make the generated scripts portable (`readlink -e`, gawk-only `xmlq`) instead of shimming.
 
 ## Pure-Verilog testbench: `--testbench-style=verilog`
+
+This style is Bambu's original testbench: an HDL testbench driven by test vectors, with no host
+process. It was the standard implementation up to the v2023.1 tag, before the DPI/C++ rework, and
+it is what the verilator-sst flow needs.
 
 Status: working for array and scalar-port interfaces with `--simulator=VERILATOR`, including
 several calls of the top function in one testbench. No libmdpi, no host process, no ELF
