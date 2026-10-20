@@ -1,9 +1,14 @@
-# macOS (arm64) port of `dev/panda`, and its pure-Verilog testbench
+# macOS (arm64) port of upstream `dev/panda`, and its pure-Verilog testbench
 
 Notes for the `spike/devpanda-macos-testbench` branch of
 [tdysart/PandA-bambu](https://github.com/tdysart/PandA-bambu): upstream `dev/panda`, built
 natively on macOS/arm64, plus a DPI-free Verilog testbench (`--testbench-style=verilog`) that
 runs under Verilator and verilator-sst. Last updated 2026-10-19.
+
+Naming: "upstream `dev/panda`" is the development branch of
+[ferrandi/PandA-bambu](https://github.com/ferrandi/PandA-bambu); "this branch" is
+`spike/devpanda-macos-testbench` of the fork, which is upstream `dev/panda` plus the macOS port and
+`--testbench-style=verilog` (upstream `dev/panda` has neither).
 
 Status: **experimental.** It works for the cases below and has a regression suite, but it is a
 spike branch that upstream has not seen. How to drive it from
@@ -23,10 +28,10 @@ and `docs/FlowSurvey.md` on branch `tjd-verilator-sst`; this file covers bambu i
 
 - `upstream/main` has not moved since April 2025; all development is on `dev/panda`.
 - The soda-plugins dataflow lowering (the plugins are in soda-benchmarks, under
-  `examples/soda-plugins`) needs two things only `dev/panda` has: the `array_dims` parameter
+  `examples/soda-plugins`) needs two things only upstream `dev/panda` has: the `array_dims` parameter
   attribute in `--architecture-xml`, and the unified `ac_channel.h` (channel accesses are
   `_read_bambu_internal` / `_write_bambu_internal`, no nested `fifo` class).
-- `dev/panda` replaced autotools with CMake and removed the C++ simulation framework, so the
+- Upstream `dev/panda` replaced autotools with CMake and removed the C++ simulation framework, so the
   macOS/autotools work and the `--testbench-style=verilog` port on `feature/legacy-xml-testbench`
   do not carry over directly. That branch is the earlier pure-Verilog testbench port, on the
   autotools tree (upstream `main` plus the macOS commits); `legacy-xml` was this style's old
@@ -50,9 +55,9 @@ Three choices are not interchangeable:
   from LLVM's, and LLVM is built without it by default.
 - **Clang 19, the same major version as the LLVM that produced the IR.** Clang 16 is where this
   came from: it is the newest clang the earlier autotools Bambu supports (`I386_CLANG16` is the
-  last compiler it knows; Homebrew `llvm@16`), so that was the clang used before `dev/panda`.
+  last compiler it knows; Homebrew `llvm@16`), so that was the clang used before upstream's `dev/panda`.
   LLVM does not promise that an older version reads newer IR, and soda-opt's LLVM 19 IR can use
-  syntax that clang 16 does not know, so `dev/panda` uses clang 19 (`I386_CLANG19`).
+  syntax that clang 16 does not know, so this branch uses clang 19 (`I386_CLANG19`).
 
 ## Build and install
 
@@ -271,7 +276,7 @@ have to be redone against the rewritten `etc/libmdpi`.
 - **`stdio.h` not found while Bambu compiles.** Export `SDKROOT=$(xcrun --show-sdk-path)`.
 - **`readlink: illegal option -- e` or an awk syntax error in `xmlq`.** The GNU shims are
   missing (see "Running Bambu from the install").
-- **`unrecognized option '--soft-float'` (or `-v3`).** Dropped from `dev/panda`; remove them.
+- **`unrecognized option '--soft-float'` (or `-v3`).** Dropped in upstream `dev/panda`, and so here; remove them.
 - **`uses inferred scalar pointer interface 'ovalid' but the pointer is written before it is
   read`.** The interface pragmas are in the old syntax; use `#pragma HLS interface port=...`.
 - **`syntax error ... Error in parsing xml ... asap7-BC.spec_data`.** The device files were
