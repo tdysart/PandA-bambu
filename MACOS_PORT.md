@@ -40,39 +40,46 @@ and `docs/FlowSurvey.md` on branch `tjd-verilator-sst`; this file covers bambu i
 ## Prerequisites
 
 Built and tested on macOS 26 (arm64) with the Xcode command line tools and these Homebrew
-packages: `llvm@19`, `cmake`, `ninja`, `boost`, `bison`, `flex`, `gmp`, `mpfr`, `verilator`,
-`coreutils` and `gawk`. For SST runs also SST-Core 16.0 and verilator-sst (see soda-benchmarks).
+packages: `cmake`, `ninja`, `boost`, `bison`, `flex`, `gmp`, `mpfr`, `verilator`, `coreutils` and
+`gawk`. For SST runs also SST-Core 16.0 and verilator-sst (see soda-benchmarks).
 
-Three choices are not interchangeable:
+**LLVM.** One LLVM 19.1.5 with clang, MLIR and RTTI serves everything: Bambu's clang plugins and
+the clang it drives, soda-opt, and the MLIR tools. It is built by `scripts/external/setup-llvm.sh`
+in [tdysart/soda-benchmarks](https://github.com/tdysart/soda-benchmarks) (about 15 minutes), for
+example `./scripts/external/setup-llvm.sh ~/SODA-OPT/llvm-19.1.5-full`, and its `install/bin` goes
+first on `PATH`. The choices behind it:
 
-- **Apple clang builds Bambu; Homebrew `llvm@19` is the compiler Bambu drives**
+- **Apple clang builds Bambu; the LLVM's clang is the compiler Bambu drives**
   (`--compiler=I386_CLANG19`). Bambu loads clang plugins into that compiler, so the plugins must
   use the same C++ library (libc++); GCC's libstdc++ is ABI-incompatible with it. Do not use
   Homebrew GCC.
-- **`~/SODA-OPT/llvm` (LLVM 19.1.5, the version soda-opt pins) cannot be used.** It is MLIR-only,
-  static, has no clang, and has RTTI off. RTTI (run-time type information, the C++ support
-  behind `dynamic_cast` and `typeid`) is needed by Bambu's clang plugins, whose classes derive
-  from LLVM's, and LLVM is built without it by default.
+- **RTTI on, and clang included.** RTTI (run-time type information, the C++ support behind
+  `dynamic_cast` and `typeid`) is needed by Bambu's clang plugins, whose classes derive from
+  LLVM's, and LLVM is built without it by default. An MLIR-only LLVM (soda-opt's own
+  `build_llvm.sh` recipe) has neither clang nor RTTI, so it cannot host the plugins.
 - **Clang 19, the same major version as the LLVM that produced the IR.** Clang 16 is where this
   came from: it is the newest clang the earlier autotools Bambu supports (`I386_CLANG16` is the
-  last compiler it knows; Homebrew `llvm@16`), so that was the clang used before upstream's `dev/panda`.
-  LLVM does not promise that an older version reads newer IR, and soda-opt's LLVM 19 IR can use
-  syntax that clang 16 does not know, so this branch uses clang 19 (`I386_CLANG19`).
+  last compiler it knows), so that was the clang used before upstream's `dev/panda`. LLVM does
+  not promise that an older version reads newer IR, and soda-opt's LLVM 19 IR can use syntax that
+  clang 16 does not know, so this branch uses clang 19 (`I386_CLANG19`).
+- **Assertions on, shared libraries.** That LLVM is built with assertions (as soda-opt's recipe
+  does), which two of the plugins needed fixes for (see "Portability changes"); the libraries are
+  shared, and the plugins resolve LLVM's symbols from the clang that loads them.
+- **The clang does not find the macOS SDK on its own**: export `SDKROOT=$(xcrun --show-sdk-path)`
+  (the soda-benchmarks `tjd_addpath.sh` and scripts do).
 
-A single custom LLVM 19.1.5 with clang, RTTI and MLIR (built by `scripts/external/setup-llvm.sh` in
-soda-benchmarks, which also serves soda-opt) works in place of Homebrew's `llvm@19`: put its `bin`
-on `PATH` instead, export `SDKROOT=$(xcrun --show-sdk-path)` (it does not find the macOS SDK on its
-own), and pass `CLANG_BIN=<install>/bin` to the regression script. That LLVM has assertions on, which
-two of the plugins needed fixes for (see below).
+Homebrew's `llvm@19` (19.1.7, assertions off) also builds this branch and is a quick baseline for
+telling whether a problem comes from the custom build, but it has no MLIR test libraries, so it
+cannot build soda-opt, and it is not the supported path.
 
 ## Build and install
 
 ```bash
-brew install llvm@19
 git clone -b spike/devpanda-macos-testbench git@github.com:tdysart/PandA-bambu.git
 cd PandA-bambu && git submodule update --init --depth 1
 
-export PATH=/opt/homebrew/opt/llvm@19/bin:$PATH
+export PATH=$HOME/SODA-OPT/llvm-19.1.5-full/install/bin:$PATH     # the LLVM from above
+export SDKROOT=$(xcrun --show-sdk-path)
 cmake -S . -B build -G Ninja \
   -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
   -DCMAKE_INSTALL_PREFIX=$HOME/bambu-devpanda \
@@ -83,7 +90,8 @@ ninja -C build && cmake --install build
 
 The configure step should report `clang-19: OK`. Use a separate install prefix: the tool is
 called `bambu` in every install, so keep installs apart on `PATH`. (On the maintainer's machine
-the install is `~/SODA-OPT/panda/install-devpanda19`.)
+the build is `~/SODA-OPT/llvm-19.1.5-full/bambu-build` and the install is
+`~/SODA-OPT/panda/install-devpanda-llvm-full`.)
 
 ## Running Bambu from the install
 
@@ -97,8 +105,8 @@ mkdir -p /tmp/gnu-shim
 ln -sf $(command -v greadlink) /tmp/gnu-shim/readlink     # from coreutils
 ln -sf $(command -v gawk) /tmp/gnu-shim/awk
 export BAMBU_HLS=$I BAMBU_HLS_BACKEND_PATH=$I
-export PATH=/tmp/gnu-shim:$I/bin:/opt/homebrew/opt/llvm@19/bin:$PATH
-export SDKROOT=$(xcrun --show-sdk-path)        # the Homebrew clang does not find the SDK itself
+export PATH=/tmp/gnu-shim:$I/bin:$HOME/SODA-OPT/llvm-19.1.5-full/install/bin:$PATH
+export SDKROOT=$(xcrun --show-sdk-path)        # the LLVM's clang does not find the SDK itself
 ```
 
 Then call `bambu` with `-m64` (no i386 or x32 targets on Darwin) and
@@ -133,7 +141,7 @@ Then call `bambu` with `-m64` (no i386 or x32 targets on Darwin) and
   `RequireCompleteType(loc, T, /*DiagID=*/0)`, which an LLVM built with assertions aborts on (the
   quiet call is `isCompleteType`), and `TreeHeightReduction.hpp` called `Instruction::isFast()` on
   any floating-point instruction, but it is only valid on floating-point math operators (`fadd`,
-  `fmul`); neither showed up with Homebrew's LLVM, which has assertions off.
+  `fmul`); neither showed up with Homebrew's LLVM, which has assertions off, but the supported LLVM has them on.
 - BSD tool compatibility in the libtech data generation (`sed`, `head -n -N`), and in
   `append_libraries.sh` (a dropped closing tag corrupted the merged device files).
 - `-msse2` is only passed on x86 hosts, and the simulation wrapper script no longer
@@ -223,7 +231,7 @@ the machine it targets: use `machine-bits=64` on `sodap-dataflow-to-llvm-pipelin
 cases (`vadd`, a testbench with three calls including one that consumes an earlier output, an
 `m_axi` kernel with two calls, and the dataflow `forward`), then corrupts one expected word of
 each and checks that the failure is reported and the return code is 1. It sets up the GNU shims
-itself and needs the install, Verilator and `llvm@19`.
+itself and needs the install, Verilator and the LLVM's clang on `PATH` (or `CLANG_BIN`).
 
 The soda-plugins' own tests (`check-sodap`) skip the Bambu-dependent cases (`REQUIRES: panda`)
 here: they need `SODAP_BAMBU_ROOT`, whose defaults assume a `compilers/clang-19` directory and
@@ -256,9 +264,8 @@ order, and their status:
 | Redirect `exit`, `abort`, `__assert_fail` to `__m_*` | `objcopy --redefine-sym ...` |
 | Drop all but a few symbols from the pretty-print object | `objcopy --keep-global-symbol ...` |
 
-macOS has no GNU `objcopy`. On the maintainer's machine `objcopy` resolves to
-`~/.local/bin/objcopy`, a shim to Homebrew `llvm@16`'s `llvm-objcopy` (16.0.6), which fails the
-Makefile with "option is not supported for MachO" on `--weaken`. `llvm-objcopy` from `llvm@19`
+macOS has no GNU `objcopy`. `llvm-objcopy` 16.0.6 (reached through a shim, since removed) failed the
+Makefile with "option is not supported for MachO" on `--weaken`. `llvm-objcopy` from LLVM 19
 was tried directly on a Mach-O object:
 
 - `--redefine-sym` works, but names need the leading underscore (`_top=__m_top`).
@@ -283,7 +290,8 @@ have to be redone against the rewritten `etc/libmdpi`.
 
 ## Troubleshooting
 
-- **`clang-19: command not found`.** Put `/opt/homebrew/opt/llvm@19/bin` on `PATH`.
+- **`clang-19: command not found`.** Put the `bin` directory of the LLVM from the prerequisites on
+  `PATH` (or set `CLANG_BIN` for the soda-benchmarks scripts).
 - **`stdio.h` not found while Bambu compiles.** Export `SDKROOT=$(xcrun --show-sdk-path)`.
 - **`readlink: illegal option -- e` or an awk syntax error in `xmlq`.** The GNU shims are
   missing (see "Running Bambu from the install").

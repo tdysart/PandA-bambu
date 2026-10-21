@@ -13,13 +13,15 @@
 # GNU readlink -e and gawk (see MACOS_PORT.md); shims are set up below when they are present.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
-I="${1:-${BAMBU_HLS:-$HOME/SODA-OPT/panda/install-devpanda19}}"
+I="${1:-${BAMBU_HLS:-$HOME/SODA-OPT/panda/install-devpanda-llvm-full}}"
 COMPILER="${COMPILER:-I386_CLANG19}"
 WORK="${WORK:-$(mktemp -d)}"
 mkdir -p "$WORK"
 export BAMBU_HLS="$I" BAMBU_HLS_BACKEND_PATH="$I"
-# CLANG_BIN is the directory of the clang named by --compiler (default: Homebrew's llvm@19).
-export PATH="$I/bin:${CLANG_BIN:-/opt/homebrew/opt/llvm@19/bin}:$PATH"
+# CLANG_BIN, when set, is the directory of the clang named by --compiler; otherwise clang-19 has to
+# be on PATH already (see MACOS_PORT.md).
+export PATH="$I/bin:${CLANG_BIN:+$CLANG_BIN:}$PATH"
+command -v clang-19 > /dev/null || { echo "clang-19 not found on PATH (set CLANG_BIN)" >&2; exit 2; }
 # A clang that is not Apple's does not find the macOS SDK on its own.
 [ "$(uname)" = "Darwin" ] && export SDKROOT="${SDKROOT:-$(xcrun --show-sdk-path)}"
 SHIM="$WORK/gnu-shim"; mkdir -p "$SHIM"
