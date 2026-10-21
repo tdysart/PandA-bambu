@@ -8,8 +8,8 @@
 # corrupt one expected word and check that the failure is detected. The dataflow case
 # synthesizes the soda-plugins `forward` design (FIFOs between three nodes).
 #
-# Needs a dev/panda Bambu install, Verilator, and a clang matching the install's compiler
-# (--compiler). On macOS also Homebrew coreutils and gawk: the generated backend scripts use
+# Needs an install of the bambu branch (see MACOS_PORT.md), Verilator, and a clang matching the
+# install's compiler (--compiler); CLANG_BIN says where it is. On macOS also Homebrew coreutils and gawk: the generated backend scripts use
 # GNU readlink -e and gawk (see MACOS_PORT.md); shims are set up below when they are present.
 set -uo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -18,7 +18,10 @@ COMPILER="${COMPILER:-I386_CLANG19}"
 WORK="${WORK:-$(mktemp -d)}"
 mkdir -p "$WORK"
 export BAMBU_HLS="$I" BAMBU_HLS_BACKEND_PATH="$I"
-export PATH="$I/bin:/opt/homebrew/opt/llvm@19/bin:$PATH"
+# CLANG_BIN is the directory of the clang named by --compiler (default: Homebrew's llvm@19).
+export PATH="$I/bin:${CLANG_BIN:-/opt/homebrew/opt/llvm@19/bin}:$PATH"
+# A clang that is not Apple's does not find the macOS SDK on its own.
+[ "$(uname)" = "Darwin" ] && export SDKROOT="${SDKROOT:-$(xcrun --show-sdk-path)}"
 SHIM="$WORK/gnu-shim"; mkdir -p "$SHIM"
 command -v greadlink > /dev/null && ln -sf "$(command -v greadlink)" "$SHIM/readlink"
 command -v gawk > /dev/null && ln -sf "$(command -v gawk)" "$SHIM/awk"

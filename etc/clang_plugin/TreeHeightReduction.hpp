@@ -155,16 +155,14 @@ namespace llvm
       {
          return false;
       }
-      if(!I->isFast())
-      {
-         return false;
-      }
+      // isFast() is only valid on floating-point math operators, so look at the opcode first (an
+      // LLVM built with assertions aborts otherwise, e.g. on a floating-point load or call).
       switch(I->getOpcode())
       {
          case Instruction::FAdd:
          case Instruction::FMul:
          {
-            return true;
+            return I->isFast();
          }
          default:
          {

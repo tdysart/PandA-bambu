@@ -59,6 +59,12 @@ Three choices are not interchangeable:
   LLVM does not promise that an older version reads newer IR, and soda-opt's LLVM 19 IR can use
   syntax that clang 16 does not know, so this branch uses clang 19 (`I386_CLANG19`).
 
+A single custom LLVM 19.1.5 with clang, RTTI and MLIR (built by `scripts/external/setup-llvm.sh` in
+soda-benchmarks, which also serves soda-opt) works in place of Homebrew's `llvm@19`: put its `bin`
+on `PATH` instead, export `SDKROOT=$(xcrun --show-sdk-path)` (it does not find the macOS SDK on its
+own), and pass `CLANG_BIN=<install>/bin` to the regression script. That LLVM has assertions on, which
+two of the plugins needed fixes for (see below).
+
 ## Build and install
 
 ```bash
@@ -123,6 +129,11 @@ Then call `bambu` with `-m64` (no i386 or x32 targets on Darwin) and
   default argument needs them, `<sstream>`, `_NSGetExecutablePath`, `size_t`/`uint64_t`
   in `plugin_customSROA.cpp`.
 - glibc-isms in libbambu: `__GNUC_PREREQ`, `<endian.h>`, `isnanf`/`isinff`/`finitef`.
+- Assertion-clean clang plugins: `plugin_ASTAnalyzer.cpp` completed types with
+  `RequireCompleteType(loc, T, /*DiagID=*/0)`, which an LLVM built with assertions aborts on (the
+  quiet call is `isCompleteType`), and `TreeHeightReduction.hpp` called `Instruction::isFast()` on
+  any floating-point instruction, but it is only valid on floating-point math operators (`fadd`,
+  `fmul`); neither showed up with Homebrew's LLVM, which has assertions off.
 - BSD tool compatibility in the libtech data generation (`sed`, `head -n -N`), and in
   `append_libraries.sh` (a dropped closing tag corrupted the merged device files).
 - `-msse2` is only passed on x86 hosts, and the simulation wrapper script no longer

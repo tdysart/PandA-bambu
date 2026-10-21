@@ -1312,7 +1312,9 @@ class InterfaceHLSPragmaHandler : public HLSPragmaAnalyzer, public HLSPragmaPars
          }
       }
 
-      (void)_CI.getSema().RequireCompleteType(loc, T, /*DiagID=*/0);
+      // Complete the type (instantiating templates) without a diagnostic. DiagID 0 is not allowed:
+      // an LLVM built with assertions aborts on it.
+      (void)_CI.getSema().isCompleteType(loc, T);
    }
 
    void materializeCompleteType(const SourceLocation& loc, QualType T) const
