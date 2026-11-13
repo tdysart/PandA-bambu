@@ -45,6 +45,7 @@
 #include "time_info.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
 #include <fstream>
@@ -1138,6 +1139,18 @@ void verilog_writer::write_io_signal_post_fix_vector(const structural_objectRef&
    }
 }
 
+/// An address given as a decimal number gets a width. An unsized decimal in Verilog is a signed 32-bit
+/// value, and a parameter without a range takes the type of its override, so an address of 2 GiB or more
+/// (e.g. --base-address=2147483648) would be negative and sign-extended where it is used.
+static std::string SizedAddress(const std::string& value)
+{
+   if(!value.empty() && std::all_of(value.begin(), value.end(), [](unsigned char c) { return std::isdigit(c) != 0; }))
+   {
+      return "64'd" + value;
+   }
+   return value;
+}
+
 void verilog_writer::write_module_parametrization(const structural_objectRef& cir)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module generics of " + cir->get_path());
@@ -1175,7 +1188,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
          }
          else
          {
-            value = mem_add[1];
+            value = SizedAddress(mem_add[1]);
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Writing ." + name + "(" + name + ")");
@@ -2419,7 +2432,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
             indented_output_stream->Append(",\n");
          }
          auto name = mem_add[0];
-         auto value = mem_add[1];
+         auto value = SizedAddress(mem_add[1]);
          if(value.find("\"\"") != std::string::npos)
          {
             boost::replace_all(value, "\"\"", "\"");
